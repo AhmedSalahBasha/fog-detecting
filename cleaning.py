@@ -25,7 +25,7 @@ def drop_unimportant_cols(df, cols_list):
 
 
 def create_new_target(row):
-    if row['Label1_left'] > 0 or row['Label2_right'] > 0:
+    if row['Label1_left'] > 0 or row['Label2_left'] > 0:
         return 1
     else:
         return 0
