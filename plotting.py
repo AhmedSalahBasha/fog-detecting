@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 import itertools
 
 
@@ -12,12 +13,12 @@ def plot_confusion_matrix(cm, target_names, normalize=True):
     :param normalize: whether to normalize or not
     :return: the confusion matrix chart
     """
+
     accuracy = np.trace(cm) / float(np.sum(cm))
     misclass = 1 - accuracy
 
     cmap = plt.get_cmap('Blues')
 
-    fig = plt.figure(figsize=(10, 8))
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title('Confusion Matrix', fontdict={'family': 'arial', 'weight': 'bold', 'size': 14})
     plt.colorbar()
@@ -52,11 +53,22 @@ def plot_confusion_matrix(cm, target_names, normalize=True):
     plt.ylabel('True Labels', fontdict=font)
     plt.xlabel('Predicted Labels\n\nAccuracy={:0.2f}%'.format(accuracy, misclass), fontdict=font)
     #plt.savefig('test_plots/cm_leipzig.png')
-    return fig
+    plt.show()
 
 
+def plot_loss_accuracy(model_output):
+    for messure in model_output.history.keys():
+        plt.plot(model_output.history[messure])
+        plt.title('Model ' + messure)
+        plt.ylabel(messure)
+        plt.xlabel('epoch')
+        plt.show()
 
-#df = pd.read_csv('clean_data/P812_M050_B_FoG_trial_1_cleaned.csv', sep=',')
+
+def plot_clf_report(clf_report):
+    # .iloc[:-1, :] to exclude support
+    sns.heatmap(pd.DataFrame(clf_report).iloc[:-1, :].T, annot=True)
+    plt.show()
 
 
 def plot_time_series(input_df, columns_list, title, fig_size=(15, 15)):
