@@ -1,37 +1,31 @@
-import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 from keras.models import Sequential
 from keras.layers import Dense
-from keras.layers import Dropout
 
-from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
-
-# reading data
-df = pd.read_csv('processed_data/P812_M050_B_FoG_trial_1_train.csv', sep=',')
-df_test = pd.read_csv('processed_data/P812_M050_B_FoG_trial_2_test.csv', sep=',')
-
-# Preparing Training set and Test set from different datasets
-X_train = df.drop('target', axis=1).values
-y_train = df['target'].values
-
-X_test = df_test.drop('target', axis=1).values
-y_test = df_test['target']
-
-print("Training-Set Shape: ", X_train.shape)
-print("Test-Set Shape: ", X_test.shape)
+from sklearn.metrics import confusion_matrix
 
 
-# Feature Scaling
-sc = StandardScaler()
-X_train = sc.fit_transform(X_train)
-X_test = sc.transform(X_test)
+def get_train_test_sets(train_df, test_df):
+    # Preparing Training set and Test set from different datasets
+    X_train = train_df.drop('Label', axis=1).values
+    y_train = train_df['Label'].values
+    X_test = test_df.drop('Label', axis=1).values
+    y_test = test_df['Label']
+    return X_train, y_train, X_test, y_test
 
 
-# Building the ANN Model
-def build_model(input_dim, num_hidden_layers=4, hidden_layer_actv='relu', output_layer_actv='sigmoid', optimizer='adam'):
-    # Intializing ANN
+def apply_feature_scaling(X_train, X_test):
+    # Feature Scaling
+    sc = StandardScaler()
+    X_train = sc.fit_transform(X_train)
+    X_test = sc.transform(X_test)
+    return X_train, X_test
+
+
+def build_ann_model(input_dim, num_hidden_layers=4, hidden_layer_actv='relu', output_layer_actv='sigmoid', optimizer='adam'):
+    # Building the ANN Model
     clf = Sequential()
 
     # Adding the input layer and first hidden layer
@@ -49,20 +43,22 @@ def build_model(input_dim, num_hidden_layers=4, hidden_layer_actv='relu', output
     return clf
 
 
-classifier = build_model(input_dim=168, num_hidden_layers=5)
+def fit_ann_model(clf, X_train, y_train, epochs=5):
+    # Fitting the classifier
+    history = clf.fit(X_train, y_train, batch_size=1, epochs=epochs, verbose=0)
+    return history
 
-# Fitting the classifier
-classifier.fit(X_train, y_train, batch_size=2, epochs=10)
 
-# Part 3 - making predictions
-# Predicting the Test set results
-y_pred = classifier.predict(X_test)
-y_pred = (y_pred > 0.5)
+def build_clf_report(clf, X_test, y_test):
+    y_pred = clf.predict(X_test)
+    y_pred = (y_pred > 0.5)
+    clf_report = classification_report(y_test, y_pred, output_dict=True)
+    return clf_report
 
-# creating the confusion matrix
 
-cm = confusion_matrix(y_test, y_pred)
-print(cm)
-
-print(classification_report(y_test, y_pred))
+def build_conf_matrix(clf, X_test, y_test):
+    y_pred = clf.predict(X_test)
+    y_pred = (y_pred > 0.5)
+    cm = confusion_matrix(y_test, y_pred)
+    return cm
 
