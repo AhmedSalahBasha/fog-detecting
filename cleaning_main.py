@@ -9,7 +9,7 @@ def get_train_test_dfs(train_test_files_list):
 
         # drop unimportant columns
         unimportant_cols_drop = ['Acc_global_1', 'Acc_global_2', 'Acc_global_3', 'Pitch',
-                                 'Roll', 'Yaw', 'Movement', 'Swing', 'SwingFind']
+                                 'Roll', 'Yaw', 'StrideLength', 'Movement', 'Swing', 'SwingFind']
         dfs_list_for_merge = []
         for df in dfs_list:
             df = cleaning.drop_unimportant_cols(df, unimportant_cols_drop)
