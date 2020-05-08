@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import itertools
 
+import scikitplot as skplt
+
 
 def plot_confusion_matrix(cm, target_names, normalize=True):
     """
@@ -19,6 +21,7 @@ def plot_confusion_matrix(cm, target_names, normalize=True):
 
     cmap = plt.get_cmap('Blues')
 
+    plt.figure(figsize=(10, 8))
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title('Confusion Matrix', fontdict={'family': 'arial', 'weight': 'bold', 'size': 14})
     plt.colorbar()
@@ -52,23 +55,36 @@ def plot_confusion_matrix(cm, target_names, normalize=True):
     plt.tight_layout()
     plt.ylabel('True Labels', fontdict=font)
     plt.xlabel('Predicted Labels\n\nAccuracy={:0.2f}%'.format(accuracy, misclass), fontdict=font)
-    #plt.savefig('test_plots/cm_leipzig.png')
-    plt.show()
+    plt.savefig('plots/cm.png')
 
 
-def plot_loss_accuracy(model_output):
-    for messure in model_output.history.keys():
-        plt.plot(model_output.history[messure])
-        plt.title('Model ' + messure)
-        plt.ylabel(messure)
-        plt.xlabel('epoch')
-        plt.show()
+def plot_conf_matrix(y_test, y_pred, pic_name, norm=True):
+    fig = plt.figure(figsize=(10, 8))
+    skplt.metrics.plot_confusion_matrix(y_test, y_pred, normalize=norm)
+    plt.savefig('plots/'+pic_name+'.png')
 
 
-def plot_clf_report(clf_report):
+def plot_loss_accuracy(history, pic_name):
+    fig = plt.figure(figsize=(10, 8))
+    # plot loss during training
+    plt.subplot(211)
+    plt.title('Loss')
+    plt.plot(history.history['loss'], label='train')
+    plt.plot(history.history['val_loss'], label='test')
+    plt.legend()
+    # plot accuracy during training
+    plt.subplot(212)
+    plt.title('Accuracy')
+    plt.plot(history.history['accuracy'], label='train')
+    plt.plot(history.history['val_accuracy'], label='test')
+    plt.legend()
+    plt.savefig('plots/'+pic_name+'.png')
+
+
+def plot_clf_report(clf_report, pic_name):
     # .iloc[:-1, :] to exclude support
     sns.heatmap(pd.DataFrame(clf_report).iloc[:-1, :].T, annot=True)
-    plt.show()
+    plt.savefig('plots/'+pic_name+'.png')
 
 
 def plot_time_series(input_df, columns_list, title, fig_size=(15, 15)):
@@ -86,4 +102,48 @@ def plot_boxplot(input_df, columns_list, figsize=(15, 8), showfliers=False):
                  capprops=dict(linestyle='-', linewidth=1.5),
                  showfliers=False, grid=True, rot=0, figsize=(15, 8))
     return fig
+
+
+def plot_pre_rec_thresh(precision, recall, thresholds, pic_name, figsize=(10, 8)):
+    """
+
+    :param precision:
+    :param recall:
+    :param figsize:
+    :return:
+    """
+    fig = plt.figure(figsize=(10, 8))
+    plt.plot(thresholds, precision[:-1], 'b--', label='Precision')
+    plt.plot(thresholds, recall[:-1], 'g--', label='Recall')
+    fig.suptitle("Precision Vs. Recall", fontsize=18)
+    plt.xlabel('Threshold')
+    plt.legend(loc='upper right')
+    plt.ylim([0, 1])
+    plt.savefig('plots/'+pic_name+'.png')
+
+
+def plot_pre_rec(y_test, y_proba, pic_name):
+    fig = plt.figure(figsize=(10, 8))
+    skplt.metrics.plot_precision_recall(y_test, y_proba)
+    plt.savefig('plots/'+pic_name+'.png')
+
+
+def plot_roc(y_test, y_proba, pic_name):
+    fig = plt.figure(figsize=(10, 8))
+    skplt.metrics.plot_roc(y_test, y_proba)
+    plt.savefig('plots/'+pic_name+'.png')
+
+
+def plot_roc_curve(roc_auc, fpr, tpr, pic_name):
+    fig = plt.figure(figsize=(10, 8))
+    # plot no skill
+    plt.plot([0, 1], [0, 1], linestyle='--')
+    # plot the roc curve for the model
+    plt.plot(fpr, tpr, marker='.')
+    # set title & xlabel & ylabel
+    fig.suptitle("ROC AUC Curve | AUC = " + str(roc_auc), fontsize=18)
+    plt.xlabel('FalsePositiveRate', fontsize=15)
+    plt.ylabel('TruePositiveRate', fontsize=15)
+    # show the plot
+    plt.savefig('plots/'+pic_name+'.png')
 
