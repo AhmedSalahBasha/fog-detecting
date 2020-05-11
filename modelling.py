@@ -11,10 +11,12 @@ from scipy import stats
 
 from dtaidistance import dtw
 
+import tensorflow as tf
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.layers import LSTM
+from keras.wrappers.scikit_learn import KerasClassifier
 
 
 def get_train_test_sets(train_df, test_df):
@@ -69,11 +71,11 @@ def build_ann_model(input_dim, num_hidden_layers=1, hidden_layer_actv='relu', ou
 
     # Adding the input layer and first hidden layer
     output_dim = int(input_dim / 2)
-    clf.add(Dense(output_dim=output_dim, init='uniform', activation=hidden_layer_actv, input_dim=input_dim))
+    clf.add(Dense(units=output_dim, init='uniform', activation=hidden_layer_actv, input_dim=input_dim))
     clf.add(Dropout(rate=0.3))
     for i in range(num_hidden_layers):
         # Adding hidden layer
-        clf.add(Dense(output_dim=output_dim, init='uniform', activation=hidden_layer_actv))
+        clf.add(Dense(units=output_dim, init='uniform', activation=hidden_layer_actv))
         clf.add(Dropout(rate=0.3))
 
     # Adding the output layer
@@ -89,6 +91,39 @@ def fit_ann_model(clf, X_train, y_train, X_test, y_test, epochs=5, batch_size=1)
     return history
 
 
+def grid_search_ann_model(X_train, y_train):
+    np.random.seed(123)
+
+    def build_classifier(optimizer):
+        clf = Sequential()
+        output_dim = 12
+        clf.add(Dense(units=output_dim, init='uniform', activation='relu', input_dim=24))
+        clf.add(Dropout(rate=0.3))
+        clf.add(Dense(units=output_dim, init='uniform', activation='relu'))
+        clf.add(Dropout(rate=0.3))
+        clf.add(Dense(units=output_dim, init='uniform', activation='relu'))
+        clf.add(Dropout(rate=0.3))
+        clf.add(Dense(units=output_dim, init='uniform', activation='relu'))
+        clf.add(Dropout(rate=0.3))
+        clf.add(Dense(units=1, init='uniform', activation='sigmoid'))
+        clf.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+        return clf
+
+    classifier = KerasClassifier(build_fn=build_classifier)
+    parameters = {'batch_size': [5, 10],
+                  'epochs': [15, 20],
+                  'optimizer': ['adam', 'Adadelta', 'Adamax']}
+    grid_search = GridSearchCV(estimator=classifier,
+                               param_grid=parameters,
+                               scoring='accuracy',
+                               cv=5)
+    grid_search = grid_search.fit(X_train, y_train)
+    best_parameters = grid_search.best_params_
+    best_accuracy = grid_search.best_score_
+    print("Best Parameters: ", best_parameters)
+    print("Best Accuracy: ", best_accuracy)
+
+
 def evaluate_model(clf, X, y):
     # evaluate model
     _, accuracy = clf.evaluate(X, y, verbose=0)
@@ -96,7 +131,7 @@ def evaluate_model(clf, X, y):
 
 
 def build_fit_svm_model(X_train, y_train):
-    clf = svm.SVC(kernel='rbf', C=1000, gamma=0.01, probability=True)
+    clf = svm.SVC(kernel='sigmoid', C=50, gamma=0.001, probability=True)
     clf.fit(X_train, y_train)
     return clf
 
@@ -108,7 +143,8 @@ def build_fit_rf_model(X_train, y_train):
 
 
 def build_fit_knn_dtw_model(X_train, y_train):
-    #dist = dtw.distance_fast(X_train, y_train)
+    # dtw._print_library_missing()
+    # dist = dtw.distance_fast(X_train, y_train)
     clf = KNeighborsClassifier(n_neighbors=10, metric=dtw.distance_fast)
     clf.fit(X_train, y_train)
     return clf
@@ -149,7 +185,7 @@ def grid_search_rf(classifier, X_train, y_train):
     print("Features Importance:  ", features_importance)
 
 
-def grid_search_svm(X_train, y_train):
+def grid_search_svm(classifier, X_train, y_train):
     """
     function for tuning the SVM classifier
     :param X_train: X training dataframe
@@ -170,28 +206,16 @@ def grid_search_svm(X_train, y_train):
                          }
                         ]
 
-    scores = ['precision', 'recall']
-
-    for score in scores:
-        print("# Tuning hyper-parameters for %s" % score)
-        print()
-
-        clf = GridSearchCV(svm.SVC(C=1), tuned_parameters, cv=5,
-                           scoring='%s_macro' % score)
-        clf.fit(X_train, y_train)
-
-        print("Best parameters set found on development set:")
-        print()
-        print(clf.best_params_)
-        print()
-        print("Grid scores on development set:")
-        print()
-        means = clf.cv_results_['mean_test_score']
-        stds = clf.cv_results_['std_test_score']
-        for mean, std, params in zip(means, stds, clf.cv_results_['params']):
-            print("%0.3f (+/-%0.03f) for %r"
-                  % (mean, std * 2, params))
-        print()
+    gd_sr = GridSearchCV(estimator=classifier,
+                         param_grid=tuned_parameters,
+                         scoring='accuracy',
+                         cv=5,
+                         n_jobs=-1)
+    gd_sr.fit(X_train, y_train)
+    best_parameters = gd_sr.best_params_
+    best_result = gd_sr.best_score_
+    print("best_parameters: ", best_parameters)
+    print("Best score: ", best_result)
 
 
 def get_model_accuracy(clf, X_test, y_test):
