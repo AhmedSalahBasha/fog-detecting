@@ -29,11 +29,17 @@ def get_train_test_sets(train_df, test_df):
 
 
 def apply_feature_scaling(X_train, X_test):
-    # Feature Scaling
     sc = StandardScaler()
-    X_train = sc.fit_transform(X_train)
-    X_test = sc.transform(X_test)
-    return X_train, X_test
+    scaled_X_train = sc.fit_transform(X_train)
+    scaled_X_test = sc.transform(X_test)
+    return scaled_X_train, scaled_X_test
+
+
+def apply_lstm_feature_scaling(X_train, X_test):
+    sc = StandardScaler()
+    scaled_X_train = sc.fit_transform(X_train.reshape(-1, X_train.shape[-1])).reshape(X_train.shape)
+    scaled_X_test = sc.transform(X_test.reshape(-1, X_test.shape[-1])).reshape(X_test.shape)
+    return scaled_X_train, scaled_X_test
 
 
 def create_lstm_dataset(X, y, time_steps=1, step=1):
@@ -49,11 +55,12 @@ def create_lstm_dataset(X, y, time_steps=1, step=1):
 # fit and evaluate a model
 def build_lstm_model(input_shape, num_hidden_layers=1, hidden_layer_actv='relu', output_layer_actv='softmax', optimizer='adam'):
     clf = Sequential()
-    clf.add(LSTM(units=100, input_shape=input_shape))
-    clf.add(Dropout(rate=0.4))
+    units = int(input_shape[1] / 2)
+    clf.add(LSTM(units=units, input_shape=input_shape))
+    clf.add(Dropout(rate=0.2))
     for i in range(num_hidden_layers):
-        clf.add(Dense(100, activation=hidden_layer_actv))
-        clf.add(Dropout(rate=0.4))
+        clf.add(Dense(units=units, activation=hidden_layer_actv))
+        clf.add(Dropout(rate=0.2))
     clf.add(Dense(units=2, activation=output_layer_actv))
     clf.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
     return clf
@@ -65,23 +72,17 @@ def fit_lstm_model(clf, X_train, y_train, X_test, y_test, epochs=1, batch_size=1
 
 
 def build_ann_model(input_dim, num_hidden_layers=1, hidden_layer_actv='relu', output_layer_actv='sigmoid', optimizer='adam'):
-
-    # Building the ANN Model
     clf = Sequential()
-
     # Adding the input layer and first hidden layer
-    output_dim = int(input_dim / 2)
-    clf.add(Dense(units=output_dim, init='uniform', activation=hidden_layer_actv, input_dim=input_dim))
-    clf.add(Dropout(rate=0.3))
+    units = int(input_dim / 2)
+    clf.add(Dense(units=units, init='uniform', activation=hidden_layer_actv, input_dim=input_dim))
+    clf.add(Dropout(rate=0.2))
     for i in range(num_hidden_layers):
         # Adding hidden layer
-        clf.add(Dense(units=output_dim, init='uniform', activation=hidden_layer_actv))
-        clf.add(Dropout(rate=0.3))
-
+        clf.add(Dense(units=units, init='uniform', activation=hidden_layer_actv))
+        clf.add(Dropout(rate=0.2))
     # Adding the output layer
     clf.add(Dense(units=1, init='uniform', activation=output_layer_actv))
-
-    # Compiling ANN
     clf.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
     return clf
 
@@ -96,8 +97,8 @@ def grid_search_ann_model(X_train, y_train):
 
     def build_classifier(optimizer):
         clf = Sequential()
-        output_dim = 12
-        clf.add(Dense(units=output_dim, init='uniform', activation='relu', input_dim=24))
+        output_dim = 210
+        clf.add(Dense(units=output_dim, init='uniform', activation='relu', input_dim=434))
         clf.add(Dropout(rate=0.3))
         clf.add(Dense(units=output_dim, init='uniform', activation='relu'))
         clf.add(Dropout(rate=0.3))
@@ -110,8 +111,8 @@ def grid_search_ann_model(X_train, y_train):
         return clf
 
     classifier = KerasClassifier(build_fn=build_classifier)
-    parameters = {'batch_size': [5, 10],
-                  'epochs': [15, 20],
+    parameters = {'batch_size': [5, 10, 15],
+                  'epochs': [10, 15, 20],
                   'optimizer': ['adam', 'Adadelta', 'Adamax']}
     grid_search = GridSearchCV(estimator=classifier,
                                param_grid=parameters,
@@ -145,7 +146,7 @@ def build_fit_rf_model(X_train, y_train):
 def build_fit_knn_dtw_model(X_train, y_train):
     # dtw._print_library_missing()
     # dist = dtw.distance_fast(X_train, y_train)
-    clf = KNeighborsClassifier(n_neighbors=10, metric=dtw.distance_fast)
+    clf = KNeighborsClassifier(n_neighbors=8, metric=dtw.distance_fast)
     clf.fit(X_train, y_train)
     return clf
 

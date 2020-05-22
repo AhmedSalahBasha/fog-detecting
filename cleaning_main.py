@@ -1,24 +1,27 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
 import cleaning
 
 
-def get_train_test_dfs(train_test_files_list):
-    train_test_dfs = []
-    for l in train_test_files_list:
-        # read raw data
-        dfs_list = cleaning.read_data(l)
+def get_full_dataset():
+    dfs_list = cleaning.group_merged_dfs()  # 35 dfs
+    full_dataset = pd.concat(dfs_list, ignore_index=True)
+    full_dataset.to_csv('data/full_dataset.csv', sep=',', index=False)
+    '''
+    train_dfs = dfs_list[0:23]
+    train_df = pd.concat(train_dfs)
+    test_dfs = dfs_list[23:]
+    test_df = pd.concat(test_dfs)
+    train_df.to_csv('data/train_df.csv', sep=',', index=False)
+    test_df.to_csv('data/test_df.csv', sep=',', index=False)
+    '''
+    return full_dataset
 
-        # drop unimportant columns
-        unimportant_cols_drop = ['Acc_global_1', 'Acc_global_2', 'Acc_global_3', 'Pitch',
-                                 'Roll', 'Yaw', 'StrideLength', 'Movement', 'Swing', 'SwingFind']
-        dfs_list_for_merge = []
-        for df in dfs_list:
-            df = cleaning.drop_unimportant_cols(df, unimportant_cols_drop)
-            dfs_list_for_merge.append(df)
 
-        # merge dataframes
-        merged_df = cleaning.merge_dataframes(dfs_list_for_merge)
+def split_train_test_sets(fulldataset):
+    X = fulldataset.drop(['Label'], axis=1).values
+    y = fulldataset['Label'].values
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.35, shuffle=False)
+    return X_train, X_test, y_train, y_test
 
-        # create new target label
-        cleaned_df = cleaning.apply_new_target(merged_df)
-        train_test_dfs.append(cleaned_df)
-    return train_test_dfs

@@ -1,5 +1,4 @@
 import glob
-import numpy as np
 import pandas as pd
 import os
 import shutil
@@ -65,7 +64,4 @@ def merge_dataframes(dfs_list, key='Time'):
     merged_df.index = pd.to_timedelta(merged_df.index, unit='ms')
     return merged_df
 
-
-list_dfs = group_merged_dfs()
-print(len(list_dfs))
 

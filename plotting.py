@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import itertools
+import os
 
 import scikitplot as skplt
 
@@ -78,6 +79,8 @@ def plot_loss_accuracy(history, pic_name):
     plt.plot(history.history['accuracy'], label='train')
     plt.plot(history.history['val_accuracy'], label='test')
     plt.legend()
+    if not os.path.exists('plots'):
+        os.makedirs('plots')
     plt.savefig('plots/'+pic_name+'.png')
 
 
