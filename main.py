@@ -23,7 +23,7 @@ models = ['ANN', 'LSTM']
 for m in models:
     print("Modelling model " + m + " start:  ", datetime.datetime.now())
     full_dataset_rolled = pd.read_csv('processed_data/full_dataset_rolled.csv', sep=',')
-    full_dataset_rolled = ex.sensors_features(full_dataset_rolled, sensor='upper', group='stat')
+    full_dataset_rolled = ex.sensors_features(full_dataset_rolled, sensor='upper', group='spec')
     X_train, X_test, y_train, y_test = cleaning_main.split_train_test_sets(full_dataset_rolled)
 
     if m == 'SVM':
@@ -60,8 +60,8 @@ for m in models:
         modelling.build_clf_report(classifier, X_test, y_test, m)
     elif m == 'ANN':
         X_train, X_test = modelling.apply_feature_scaling(X_train, X_test)
-        classifier = modelling.build_ann_model(input_dim=X_train.shape[1], num_hidden_layers=2)
-        history = modelling.fit_ann_model(classifier, X_train, y_train, X_test, y_test, epochs=50, batch_size=10)
+        classifier = modelling.build_ann_model(input_dim=X_train.shape[1], num_hidden_layers=3)
+        history = modelling.fit_ann_model(classifier, X_train, y_train, X_test, y_test, epochs=30, batch_size=8)
         train_accuracy = modelling.evaluate_model(classifier, X_train, y_train)
         test_accuracy = modelling.evaluate_model(classifier, X_test, y_test)
         print(m + ' Training Accuracy: %.3f, Testing Accuracy: %.3f' % (train_accuracy, test_accuracy))
@@ -78,8 +78,8 @@ for m in models:
         y_train = to_categorical(y_train)
         y_test = to_categorical(y_test)
         input_shape = [X_train.shape[1], X_train.shape[2]]
-        classifier = modelling.build_lstm_model(input_shape, num_hidden_layers=2, optimizer='adam')
-        history = modelling.fit_lstm_model(classifier, X_train, y_train, X_test, y_test, epochs=50, batch_size=8)
+        classifier = modelling.build_lstm_model(input_shape, num_hidden_layers=3, optimizer='adam')
+        history = modelling.fit_lstm_model(classifier, X_train, y_train, X_test, y_test, epochs=30, batch_size=8)
         train_accuracy = modelling.evaluate_model(classifier, X_train, y_train)
         test_accuracy = modelling.evaluate_model(classifier, X_test, y_test)
         print(m + ' Training Accuracy: %.3f, Testing Accuracy: %.3f' % (train_accuracy, test_accuracy))
