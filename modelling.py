@@ -1,4 +1,4 @@
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 import sklearn.metrics as metrics
 from sklearn.model_selection import GridSearchCV
@@ -17,6 +17,9 @@ from keras.layers import Dense
 from keras.layers import Dropout
 from keras.layers import LSTM
 from keras.wrappers.scikit_learn import KerasClassifier
+import keras_metrics as km
+from keras import backend as K
+from keras.metrics import Precision, Recall
 
 
 def get_train_test_sets(train_df, test_df):
@@ -36,9 +39,10 @@ def apply_feature_scaling(X_train, X_test):
 
 
 def apply_lstm_feature_scaling(X_train, X_test):
-    sc = StandardScaler()
-    scaled_X_train = sc.fit_transform(X_train.reshape(-1, X_train.shape[-1])).reshape(X_train.shape)
-    scaled_X_test = sc.transform(X_test.reshape(-1, X_test.shape[-1])).reshape(X_test.shape)
+    # sc = StandardScaler()
+    mms = MinMaxScaler(feature_range=(0, 1))
+    scaled_X_train = mms.fit_transform(X_train.reshape(-1, X_train.shape[-1])).reshape(X_train.shape)
+    scaled_X_test = mms.transform(X_test.reshape(-1, X_test.shape[-1])).reshape(X_test.shape)
     return scaled_X_train, scaled_X_test
 
 
@@ -56,7 +60,11 @@ def create_lstm_dataset(X, y, time_steps=1, step=1):
 def build_lstm_model(input_shape, num_hidden_layers=1, hidden_layer_actv='relu', output_layer_actv='softmax', optimizer='adam'):
     clf = Sequential()
     units = int(input_shape[1] / 2)
-    clf.add(LSTM(units=units, input_shape=input_shape))
+    clf.add(LSTM(units=units, input_shape=input_shape, return_sequences=True))
+    clf.add(Dropout(rate=0.2))
+    clf.add(LSTM(units=units, return_sequences=True))
+    clf.add(Dropout(rate=0.2))
+    clf.add(LSTM(units=units))
     clf.add(Dropout(rate=0.2))
     for i in range(num_hidden_layers):
         clf.add(Dense(units=units, activation=hidden_layer_actv))
@@ -228,14 +236,16 @@ def get_model_accuracy(clf, X_test, y_test):
 def build_clf_report(clf, X_test, y_test, model_name):
     y_pred = clf.predict(X_test)
     y_pred = (y_pred > 0.5)
-    clf_report = metrics.classification_report(y_test, y_pred, output_dict=True)
+    # y_pred = np.argmax(y_pred, axis=1)
+    clf_report = metrics.classification_report(y_test, y_pred)
     print("Classification Report For Model " + model_name + " : \n", clf_report)
 
 
 def build_conf_matrix(clf, X_test, y_test):
     y_pred = clf.predict(X_test)
     # y_pred = (y_pred > 0.5)
-    cm = metrics.confusion_matrix(y_test, y_pred)
+    y_pred = np.argmax(y_pred, axis=1)
+    cm = metrics.confusion_matrix(y_test, y_pred, labels=[0, 1])
     return cm
 
 
@@ -325,3 +335,43 @@ def get_optimal_f1(clf, X_test, y_test):
             best_f1 = f1
             best_thr = prob_thr
     print("Best threshold %f || Best F1 Score %f" % (best_thr, best_f1))
+
+
+def roc_auc_score(clf, X_test, y_test):
+    y_proba = get_y_proba(clf, X_test)
+    # y_pred = (y_proba > 0.5)
+    y_pred = np.argmax(y_proba, axis=1)
+    auc_score = metrics.roc_auc_score(y_test, y_pred)
+    print(auc_score)
+
+
+def f1(y_true, y_pred):
+    def recall(y_true, y_pred):
+        """Recall metric.
+
+        Only computes a batch-wise average of recall.
+
+        Computes the recall, a metric for multi-label classification of
+        how many relevant items are selected.
+        """
+        true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+        possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+        recall = true_positives / (possible_positives + K.epsilon())
+        return recall
+
+    def precision(y_true, y_pred):
+        """Precision metric.
+
+        Only computes a batch-wise average of precision.
+
+        Computes the precision, a metric for multi-label classification of
+        how many selected items are relevant.
+        """
+        true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+        predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+        precision = true_positives / (predicted_positives + K.epsilon())
+        return precision
+    precision = precision(y_true, y_pred)
+    recall = recall(y_true, y_pred)
+    return 2*((precision*recall)/(precision+recall+K.epsilon()))
+

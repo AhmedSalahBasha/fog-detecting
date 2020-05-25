@@ -33,7 +33,7 @@ def get_features_group(df, group):
         df = df[spec_cols]
         return df
     elif group == 'temp':
-        temp_regex = re.compile(".*_total_eng|.*_slope|.*_max_peaks|.*_abs_eng|.*_dist|.*_")
+        temp_regex = re.compile(".*_total_eng|.*_slope|.*_max_peaks|.*_abs_eng|.*_dist")
         temp_cols = list(filter(temp_regex.match, all_cols))
         temp_cols.append('Label')
         df = df[temp_cols]
