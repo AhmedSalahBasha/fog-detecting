@@ -3,8 +3,21 @@ import datetime
 import pandas as pd
 from tsfresh import extract_relevant_features, extract_features
 from tsfresh.feature_extraction import ComprehensiveFCParameters
+import cleaning
+
 from tsfresh.utilities.dataframe_functions import roll_time_series
 import tsfel
+
+
+def get_rolled_dataframe(win_size, step_size):
+    dfs_list = cleaning.group_merged_dfs()  # 35 dfs
+    rolled_dfs = []
+    for df in dfs_list:
+        rolled_df = rolling_window(df, win_size, step_size)
+        rolled_dfs.append(rolled_df)
+    full_dataset_rolled = pd.concat(rolled_dfs, ignore_index=True)
+    full_dataset_rolled.to_csv('processed_data/new_full_dataset_rolled.csv', sep=',', index=False)
+    return full_dataset_rolled
 
 
 def get_train_df(train_test_dfs_list):
@@ -90,7 +103,7 @@ def get_spectral_entropy(col, fs):
 
 
 def rolling_window(input_df, win_size=400, step_size=50):
-    fs = 200     # Signal sampling frequency
+    fs = win_size     # Signal sampling frequency
     columns_list = list(input_df.columns)
     for col in input_df.columns:
         if col != 'Label':
@@ -118,7 +131,7 @@ def rolling_window(input_df, win_size=400, step_size=50):
             print('### Finished Column :  ' + col +' At time:  ' + str(datetime.datetime.now()) +'######')
     input_df = input_df.dropna()
     input_df = drop_columns_except_target(input_df, columns_list)
-    print('======== FINISHED FIRST DATA-SET AT TIME:  ' + str(datetime.datetime.now()) + '==========')
+    print('======== FINISHED DATAFRAME AT TIME:  ' + str(datetime.datetime.now()) + '==========')
     print(input_df.tail(10))
     return input_df
 
