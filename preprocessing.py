@@ -5,6 +5,7 @@ from tsfresh import extract_relevant_features, extract_features
 from tsfresh.feature_extraction import ComprehensiveFCParameters
 import cleaning
 
+import numpy as np
 from tsfresh.utilities.dataframe_functions import roll_time_series
 import tsfel
 
@@ -116,6 +117,7 @@ def rolling_window(input_df, win_size=400, step_size=50):
             input_df[col + '_iqr_rng'] = input_df[col].rolling(win_size).apply(tsfel.rms)[step_size - 1::step_size]  # root mean squar
             input_df[col + '_rms'] = input_df[col].rolling(win_size).apply(get_iqr)[step_size - 1::step_size]     # interquartile
             input_df[col + '_iqr_rng'] = input_df[col].rolling(win_size).apply(tsfel.interq_range)[step_size - 1::step_size]  # interquartile range
+            input_df[col + '_fi'] = input_df[col].rolling(win_size).apply(freeze_index, args=(fs, [3, 8], [0.5, 3], win_size,))[step_size - 1::step_size]
             input_df[col + '_hum_eng'] = input_df[col].rolling(win_size).apply(get_human_range_energy, args=(fs,))[step_size - 1::step_size]  # human range energy
             input_df[col + '_total_eng'] = input_df[col].rolling(win_size).apply(get_total_energy, args=(fs,))[step_size - 1::step_size]  # total energy
             input_df[col + '_spec_entropy'] = input_df[col].rolling(win_size).apply(get_spectral_entropy, args=(fs,))[step_size - 1::step_size]  # total energy
@@ -134,6 +136,62 @@ def rolling_window(input_df, win_size=400, step_size=50):
     print('======== FINISHED DATAFRAME AT TIME:  ' + str(datetime.datetime.now()) + '==========')
     print(input_df.tail(10))
     return input_df
+
+
+def freeze_index(data, sf, band1, band2, win_sec=None, relative=False):
+    fi = bandpower(data, sf, band1, win_sec, relative) / bandpower(data, sf, band2, win_sec, relative)
+    return fi
+
+
+def bandpower(data, sf, band, window_sec, relative):
+    """Compute the average power of the signal x in a specific frequency band.
+    Source: https://raphaelvallat.com/bandpower.html
+    Parameters
+    ----------
+    data : 1d-array
+        Input signal in the time-domain.
+    sf : float
+        Sampling frequency of the data.
+    band : list
+        Lower and upper frequencies of the band of interest.
+    window_sec : float
+        Length of each window in seconds.
+        If None, window_sec = (1 / min(band)) * 2
+    relative : boolean
+        If True, return the relative power (= divided by the total power of the signal).
+        If False (default), return the absolute power.
+
+    Return
+    ------
+    bp : float
+        Absolute or relative band power.
+    """
+    from scipy.signal import welch
+    from scipy.integrate import simps
+    band = np.asarray(band)
+    low, high = band
+
+    # Define window length
+    if window_sec is not None:
+        nperseg = window_sec * sf
+    else:
+        nperseg = (2 / low) * sf
+
+    # Compute the modified periodogram (Welch)
+    freqs, psd = welch(data, sf, nperseg=nperseg)
+
+    # Frequency resolution
+    freq_res = freqs[1] - freqs[0]
+
+    # Find closest indices of band in frequency vector
+    idx_band = np.logical_and(freqs >= low, freqs <= high)
+
+    # Integral approximation of the spectrum using Simpson's rule.
+    bp = simps(psd[idx_band], dx=freq_res)
+
+    if relative:
+        bp /= simps(psd, dx=freq_res)
+    return bp
 
 
 def tsfresh_generate_features(input_df):

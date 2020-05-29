@@ -57,7 +57,7 @@ def get_features_group(df, group):
         df = df[stat_cols]
         return df
     elif group == 'spec':
-        spec_regex = re.compile(".*_hum_eng|.*_spec_entropy|.*_max_freq|.*_pow_band|.*_max_pow_spec")
+        spec_regex = re.compile(".*_hum_eng|.*_spec_entropy|.*_max_freq|.*_pow_band|.*_max_pow_spec|.*_fi")
         spec_cols = list(filter(spec_regex.match, all_cols))
         spec_cols.append('Label')
         df = df[spec_cols]
