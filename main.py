@@ -14,16 +14,22 @@ from plotting import plot_loss_accuracy, plot_conf_matrix, plot_pre_rec, plot_pr
 # Pre-processing
 full_dataset = pd.read_csv('data/full_dataset.csv', sep=',')
 # ATTENTION OF ACTIVATING THE FOLLOWING LINE - IT TAKES AROUND 12 HOURS
-# full_dataset_rolled = preprocessing.get_rolled_dataframe(win_size=200, step_size=40)
-full_dataset_rolled = pd.read_csv('processed_data/new_full_dataset_rolled.csv', sep=',')
+full_dataset_rolled = preprocessing.get_rolled_dataframe(win_size=200, step_size=40)
+# full_dataset_rolled = pd.read_csv('processed_data/freq_dom_features_rolled_dataset.csv', sep=',')
 
 # Modelling
-models = ['LSTM', 'SVM', 'ANN']
+models = ['LSTM']
 for m in models:
     print("Modelling model " + m + " start:  ", datetime.datetime.now())
 
+    # Feature Selection
     # group --> stat, spec, temp   # pos --> upper, lower   # sensor --> acc, gyro, both
-    full_dataset_rolled = ex.sensors_features(full_dataset_rolled, pos='upper', group='spec', sensor='both')
+    # full_dataset_rolled = ex.sensors_features(full_dataset_rolled, pos='upper', group='stat', sensor='acc')
+
+    # drop unimportant features
+    drop_spec_features = ['_max_pow_spec', '_max_freq', '_spec_entropy']
+    drop_stat_features = ['_iqr_rng', '_var', '_med', '_rms']
+    # full_dataset_rolled = ex.drop_features(full_dataset_rolled, drop_stat_features)
     X_train, X_test, y_train, y_test = cleaning_main.split_train_test_sets(full_dataset_rolled)
 
     if m == 'SVM':
@@ -34,11 +40,15 @@ for m in models:
         print(m + " Accuracy = ", accuracy)
         modelling.build_clf_report(classifier, X_test, y_test, m)
     elif m == 'RF':
-        X_train, X_test = modelling.apply_feature_scaling(X_train, X_test)
-        classifier = modelling.build_fit_rf_model(X_train, y_train)
-        accuracy = modelling.get_model_accuracy(classifier, X_test, y_test)
+        scaled_X_train, scaled_X_test = modelling.apply_feature_scaling(X_train, X_test)
+        classifier = modelling.build_fit_rf_model(scaled_X_train, y_train)
+        accuracy = modelling.get_model_accuracy(classifier, scaled_X_test, y_test)
         print(m + " Accuracy = ", accuracy)
-        modelling.build_clf_report(classifier, X_test, y_test, m)
+        modelling.build_clf_report(classifier, scaled_X_test, y_test, m)
+        feature_importances = pd.DataFrame(classifier.feature_importances_,
+                                           index=X_train.columns,
+                                           columns=['importance']).sort_values('importance', ascending=False)
+        print(feature_importances)
     elif m == 'KNN':
         X_train, X_test = modelling.apply_feature_scaling(X_train, X_test)
         classifier = modelling.build_fit_knn_model(X_train, y_train)
@@ -46,11 +56,15 @@ for m in models:
         print(m + " Accuracy = ", accuracy)
         modelling.build_clf_report(classifier, X_test, y_test, m)
     elif m == 'DT':
-        X_train, X_test = modelling.apply_feature_scaling(X_train, X_test)
-        classifier = modelling.build_fit_dt_model(X_train, y_train)
-        accuracy = modelling.get_model_accuracy(classifier, X_test, y_test)
+        scaled_X_train, scaled_X_test = modelling.apply_feature_scaling(X_train, X_test)
+        classifier = modelling.build_fit_dt_model(scaled_X_train, y_train)
+        accuracy = modelling.get_model_accuracy(classifier, scaled_X_test, y_test)
         print(m + " Accuracy = ", accuracy)
-        modelling.build_clf_report(classifier, X_test, y_test, m)
+        modelling.build_clf_report(classifier, scaled_X_test, y_test, m)
+        feature_importances = pd.DataFrame(classifier.feature_importances_,
+                                           index=X_train.columns,
+                                           columns=['importance']).sort_values('importance', ascending=False)
+        print(feature_importances)
     elif m == 'KNN_DTW':
         # X_train, X_test, y_train, y_test = cleaning_main.split_train_test_sets(full_dataset)
         X_train, X_test = modelling.apply_feature_scaling(X_train, X_test)
@@ -78,8 +92,8 @@ for m in models:
         y_train = to_categorical(y_train)
         y_test = to_categorical(y_test)
         input_shape = [X_train.shape[1], X_train.shape[2]]
-        classifier = modelling.build_lstm_model(input_shape, optimizer='adam', num_hidden_layers=2)
-        history = modelling.fit_lstm_model(classifier, X_train, y_train, X_test, y_test, epochs=50, batch_size=32)
+        classifier = modelling.build_lstm_model(input_shape, optimizer='adam', num_hidden_layers=3)
+        history = modelling.fit_lstm_model(classifier, X_train, y_train, X_test, y_test, epochs=100, batch_size=64)
         train_accuracy = modelling.evaluate_model(classifier, X_train, y_train)
         test_accuracy = modelling.evaluate_model(classifier, X_test, y_test)
         print(m + ' Training Accuracy: %.3f, Testing Accuracy: %.3f' % (train_accuracy, test_accuracy))

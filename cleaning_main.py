@@ -20,8 +20,8 @@ def get_full_dataset():
 
 
 def split_train_test_sets(fulldataset):
-    X = fulldataset.drop(['Label'], axis=1).values
-    y = fulldataset['Label'].values
+    X = fulldataset.drop(['Label'], axis=1)
+    y = fulldataset['Label']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.35, shuffle=False)
     return X_train, X_test, y_train, y_test
 

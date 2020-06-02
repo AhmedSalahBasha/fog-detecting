@@ -70,5 +70,14 @@ def get_features_group(df, group):
         return df
 
 
+def drop_features(df, features_list):
+    new_df = df.copy()
+    for f in features_list:
+        regex = re.compile(".*"+f)
+        cols = list(filter(regex.match, list(new_df.columns)))
+        new_df = new_df.drop(cols, axis=1)
+    return new_df
+
+
 
 

@@ -145,8 +145,12 @@ def build_fit_svm_model(X_train, y_train):
     return clf
 
 
-def build_fit_rf_model(X_train, y_train):
-    clf = RandomForestClassifier(max_depth=5, random_state=0, criterion='gini')
+def build_fit_rf_model(X_train, y_train, n_estimators=100, max_depth=1, criterion='gini', min_samples_split=2):
+    clf = RandomForestClassifier(n_estimators=n_estimators,
+                                 max_depth=max_depth,
+                                 random_state=0,
+                                 criterion=criterion,
+                                 min_samples_split=min_samples_split)
     clf.fit(X_train, y_train)
     return clf
 
@@ -154,13 +158,13 @@ def build_fit_rf_model(X_train, y_train):
 def build_fit_knn_dtw_model(X_train, y_train):
     # dtw._print_library_missing()
     # dist = dtw.distance_fast(X_train, y_train)
-    clf = KNeighborsClassifier(n_neighbors=8, metric=dtw.distance_fast)
+    clf = KNeighborsClassifier(n_neighbors=2, metric=dtw.distance_fast)
     clf.fit(X_train, y_train)
     return clf
 
 
 def build_fit_knn_model(X_train, y_train):
-    clf = KNeighborsClassifier(n_neighbors=4)
+    clf = KNeighborsClassifier(n_neighbors=2, weights='distance')
     clf.fit(X_train, y_train)
     return clf
 
