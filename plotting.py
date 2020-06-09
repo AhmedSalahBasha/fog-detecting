@@ -84,6 +84,25 @@ def plot_loss_accuracy(history, pic_name):
     plt.savefig('plots/'+pic_name+'.png')
 
 
+def plot_loss_f1(history, pic_name):
+    fig = plt.figure(figsize=(10, 8))
+    # plot loss during training
+    plt.subplot(211)
+    plt.title('Loss')
+    plt.plot(history.history['loss'], label='train')
+    plt.plot(history.history['val_loss'], label='test')
+    plt.legend()
+    # plot accuracy during training
+    plt.subplot(212)
+    plt.title('F1-Score')
+    plt.plot(history.history['f1'], label='train')
+    plt.plot(history.history['val_f1'], label='test')
+    plt.legend()
+    if not os.path.exists('plots'):
+        os.makedirs('plots')
+    plt.savefig('plots/'+pic_name+'.png')
+
+
 def plot_clf_report(clf_report, pic_name):
     # .iloc[:-1, :] to exclude support
     sns.heatmap(pd.DataFrame(clf_report).iloc[:-1, :].T, annot=True)

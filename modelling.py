@@ -16,6 +16,8 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.layers import LSTM
+from keras.layers import Bidirectional
+from keras.optimizers import SGD
 from keras.wrappers.scikit_learn import KerasClassifier
 import keras_metrics as km
 from keras import backend as K
@@ -57,25 +59,28 @@ def create_lstm_dataset(X, y, time_steps=1, step=1):
 
 
 # fit and evaluate a model
-def build_lstm_model(input_shape, num_hidden_layers=1, hidden_layer_actv='relu', output_layer_actv='softmax', optimizer='adam'):
+def build_lstm_model(input_shape, num_hidden_layers, output_layer_actv, optimizer, loss_measure):
     clf = Sequential()
-    units = int(input_shape[1] / 2)
+    units = int(input_shape[1])
+    # LSTM input layer
     clf.add(LSTM(units=units, input_shape=input_shape, return_sequences=True))
-    clf.add(Dropout(rate=0.2))
-    clf.add(LSTM(units=units, return_sequences=True))
-    clf.add(Dropout(rate=0.2))
-    clf.add(LSTM(units=units))
-    clf.add(Dropout(rate=0.2))
+    clf.add(Dropout(rate=0.5))
+    # LSTM middle layers
     for i in range(num_hidden_layers):
-        clf.add(Dense(units=units, activation=hidden_layer_actv))
-        clf.add(Dropout(rate=0.2))
+        clf.add(LSTM(units=units, return_sequences=True))
+        clf.add(Dropout(rate=0.5))
+    # LSTM last layer
+    clf.add(LSTM(units=int(units)))
+    clf.add(Dropout(rate=0.3))
+    # output Dense layer
     clf.add(Dense(units=2, activation=output_layer_actv))
-    clf.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+    clf.compile(loss=loss_measure, optimizer=optimizer, metrics=[f1])
+    print(clf.summary())
     return clf
 
 
 def fit_lstm_model(clf, X_train, y_train, X_test, y_test, epochs=1, batch_size=1):
-    history = clf.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=epochs, batch_size=batch_size, verbose=0, shuffle=False)
+    history = clf.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=epochs, batch_size=batch_size, verbose=2, shuffle=False)
     return history
 
 
@@ -115,7 +120,7 @@ def grid_search_ann_model(X_train, y_train):
         clf.add(Dense(units=output_dim, init='uniform', activation='relu'))
         clf.add(Dropout(rate=0.3))
         clf.add(Dense(units=1, init='uniform', activation='sigmoid'))
-        clf.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+        clf.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=[f1])
         return clf
 
     classifier = KerasClassifier(build_fn=build_classifier)

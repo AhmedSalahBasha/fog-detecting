@@ -1,6 +1,7 @@
 import cleaning
 import rolling_window as rw
-
+import re
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -24,12 +25,12 @@ def get_rolled_dataframe(win_size, step_size):
 
 def create_rolled_train_dev_test_dataframes(win_size, step_size):
     """
-
-    :param win_size:
-    :param step_size:
-    :return:
+    It calls
+    :param win_size: rolling window size
+    :param step_size: rolling window step. It should be a percentage of win_size to overlap windows.
+    :return: None
     """
-    dfs_list = cleaning.group_merged_dfs()  # 35 dfs
+    dfs_list = cleaning.group_merged_dfs()  # returning lists of 35 dfs
     train_dfs_list = dfs_list[:20]
     dev_dfs_list = dfs_list[20:27]
     test_dfs_list = dfs_list[27:]
@@ -69,10 +70,16 @@ def split_train_dev_test_sets(train_set, dev_set, test_set):
     X_train = train_set.drop(['Label'], axis=1)
     y_train = train_set['Label']
 
-    X_dev = dev_set.drop(['Labe'], axis=1)
+    X_dev = dev_set.drop(['Label'], axis=1)
     y_dev = dev_set['Label']
 
     X_test = test_set.drop(['Label'], axis=1)
     y_test = test_set['Label']
 
     return X_train, y_train, X_dev, y_dev, X_test, y_test
+
+
+def get_value_counts_of_array(arr):
+    unique, counts = np.unique(arr, return_counts=True)
+    return np.asarray((unique, counts)).T
+

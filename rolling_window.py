@@ -1,6 +1,7 @@
 import datetime
 
 import numpy as np
+from scipy import stats
 import tsfel
 
 from tsfresh import extract_relevant_features, extract_features
@@ -20,7 +21,9 @@ def rolling_window(input_df, win_size, step_size):
     win_sec = win_size / fs
     columns_list = list(input_df.columns)
     for col in input_df.columns:
-        if col != 'Label':
+        if col == 'Label':
+            input_df[col] = input_df[col].rolling(win_size).apply(_get_rolled_label)[step_size - 1::step_size]  # label
+        else:
             print('### Started Column :  ' + col + ' At time:  ' + str(datetime.datetime.now()) + '######')
             # =============== STATISTICAL FEATURES ================
             input_df[col + '_avg'] = input_df[col].rolling(win_size).mean()[step_size - 1::step_size]     # mean
@@ -76,6 +79,16 @@ def _drop_columns_except_target(input_df, columns_list):
         if col != 'Label':
             input_df = input_df.drop(col, axis=1)
     return input_df
+
+
+def _get_rolled_label(col):
+    """
+    Get the mode (most common value) value for the label column within the window size while rolling
+    :param col: dataframe columns (series)
+    :return: the mode value
+    """
+    label = stats.mode(col)[0][0]
+    return label
 
 
 def _get_iqr(col):
