@@ -23,32 +23,61 @@ import keras_metrics as km
 from keras import backend as K
 from keras.metrics import Precision, Recall
 
-
-def get_train_test_sets(train_df, test_df):
-    # Preparing Training set and Test set from different datasets
-    X_train = train_df.drop('Label', axis=1).values
-    y_train = train_df['Label'].values
-    X_test = test_df.drop('Label', axis=1).values
-    y_test = test_df['Label']
-    return X_train, y_train, X_test, y_test
+from ml_models import SVM_Model, RF_Model, DT_Model, KNN_Model, KNN_DTW_Model
+from dl_models import ANN_Model, LSTM_Model
 
 
-def apply_feature_scaling(X_train, X_test):
-    sc = StandardScaler()
-    scaled_X_train = sc.fit_transform(X_train)
-    scaled_X_test = sc.transform(X_test)
-    return scaled_X_train, scaled_X_test
+def call_svm_model():
+    model = SVM_Model(gamma=0.001, C=50, kernel='sigmoid')
+    return model
 
 
-def apply_lstm_feature_scaling(X_train, X_test):
-    # sc = StandardScaler()
-    mms = MinMaxScaler(feature_range=(0, 1))
-    scaled_X_train = mms.fit_transform(X_train.reshape(-1, X_train.shape[-1])).reshape(X_train.shape)
-    scaled_X_test = mms.transform(X_test.reshape(-1, X_test.shape[-1])).reshape(X_test.shape)
-    return scaled_X_train, scaled_X_test
+def call_rf_model():
+    model = RF_Model(n_estimators=400, max_depth=20, criterion='entropy', min_samples_split=4)
+    return model
 
 
-def create_lstm_dataset(X, y, time_steps=1, step=1):
+def call_dt_model():
+    model = DT_Model(max_depth=10, criterion='gini', min_samples_split=2)
+    return model
+
+def call_knn_model():
+    model = KNN_Model(n_neighbors=10, weights='distance', metric='minkowski')
+    return model
+
+def call_knn_dtw_model():
+    KNN_DTW_Model(n_neighbors=10, weights='distance')
+
+def call_ann_model(input_dim):
+    model = ANN_Model(input_dim=input_dim,
+                      num_hidden_layers=5,
+                      hidden_layer_actv='relu',
+                      output_layer_actv='sigmoid',
+                      optimizer='adam',
+                      dropout_rate=0.4,
+                      metric=f1)
+    return model
+
+def call_lstm_model(input_dim):
+    model = LSTM_Model(input_dim=input_dim,
+                       num_hidden_layers=3,
+                       hidden_layer_actv='relu',
+                       output_layer_actv='softmax',
+                       optimizer='adam',
+                       dropout_rate=0.5,
+                       metric=f1)
+    return model
+
+
+def create_3d_dataset(X, y, time_steps=1, step=1):
+    """
+    Creating 3-nd dataset as a standard input shape for RNN (LSTM) Model
+    :param X: Features dataframe
+    :param y: Label series
+    :param time_steps: time steps to look back
+    :param step: number of steps to reduce overlapping window
+    :return: X as 3-nd numpy array and y
+    """
     Xs, ys = [], []
     for i in range(0, len(X) - time_steps, step):
         v = X.iloc[i:(i + time_steps)].values
@@ -57,52 +86,13 @@ def create_lstm_dataset(X, y, time_steps=1, step=1):
         ys.append(stats.mode(labels)[0][0])
     return np.array(Xs), np.array(ys).reshape(-1, 1)
 
-
-# fit and evaluate a model
-def build_lstm_model(input_shape, num_hidden_layers, output_layer_actv, optimizer, loss_measure):
-    clf = Sequential()
-    units = int(input_shape[1])
-    # LSTM input layer
-    clf.add(LSTM(units=units, input_shape=input_shape, return_sequences=True))
-    clf.add(Dropout(rate=0.5))
-    # LSTM middle layers
-    for i in range(num_hidden_layers):
-        clf.add(LSTM(units=units, return_sequences=True))
-        clf.add(Dropout(rate=0.5))
-    # LSTM last layer
-    clf.add(LSTM(units=int(units)))
-    clf.add(Dropout(rate=0.3))
-    # output Dense layer
-    clf.add(Dense(units=2, activation=output_layer_actv))
-    clf.compile(loss=loss_measure, optimizer=optimizer, metrics=[f1])
-    print(clf.summary())
-    return clf
-
-
-def fit_lstm_model(clf, X_train, y_train, X_test, y_test, epochs=1, batch_size=1):
-    history = clf.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=epochs, batch_size=batch_size, verbose=2, shuffle=False)
-    return history
-
-
-def build_ann_model(input_dim, num_hidden_layers=1, hidden_layer_actv='relu', output_layer_actv='sigmoid', optimizer='adam'):
-    clf = Sequential()
-    # Adding the input layer and first hidden layer
-    units = int(input_dim / 2)
-    clf.add(Dense(units=units, init='uniform', activation=hidden_layer_actv, input_dim=input_dim))
-    clf.add(Dropout(rate=0.2))
-    for i in range(num_hidden_layers):
-        # Adding hidden layer
-        clf.add(Dense(units=units, init='uniform', activation=hidden_layer_actv))
-        clf.add(Dropout(rate=0.2))
-    # Adding the output layer
-    clf.add(Dense(units=1, init='uniform', activation=output_layer_actv))
-    clf.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
-    return clf
-
-
-def fit_ann_model(clf, X_train, y_train, X_test, y_test, epochs=5, batch_size=1):
-    history = clf.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=epochs, batch_size=batch_size, verbose=0, shuffle=False)
-    return history
+def get_train_test_sets(train_df, test_df):
+    # Preparing Training set and Test set from different datasets
+    X_train = train_df.drop('Label', axis=1).values
+    y_train = train_df['Label'].values
+    X_test = test_df.drop('Label', axis=1).values
+    y_test = test_df['Label']
+    return X_train, y_train, X_test, y_test
 
 
 def grid_search_ann_model(X_train, y_train):
@@ -136,48 +126,6 @@ def grid_search_ann_model(X_train, y_train):
     best_accuracy = grid_search.best_score_
     print("Best Parameters: ", best_parameters)
     print("Best Accuracy: ", best_accuracy)
-
-
-def evaluate_model(clf, X, y):
-    # evaluate model
-    _, accuracy = clf.evaluate(X, y, verbose=0)
-    return accuracy
-
-
-def build_fit_svm_model(X_train, y_train):
-    clf = svm.SVC(kernel='sigmoid', C=50, gamma=0.001, probability=True)
-    clf.fit(X_train, y_train)
-    return clf
-
-
-def build_fit_rf_model(X_train, y_train, n_estimators=100, max_depth=1, criterion='gini', min_samples_split=2):
-    clf = RandomForestClassifier(n_estimators=n_estimators,
-                                 max_depth=max_depth,
-                                 random_state=0,
-                                 criterion=criterion,
-                                 min_samples_split=min_samples_split)
-    clf.fit(X_train, y_train)
-    return clf
-
-
-def build_fit_knn_dtw_model(X_train, y_train):
-    # dtw._print_library_missing()
-    # dist = dtw.distance_fast(X_train, y_train)
-    clf = KNeighborsClassifier(n_neighbors=2, metric=dtw.distance_fast)
-    clf.fit(X_train, y_train)
-    return clf
-
-
-def build_fit_knn_model(X_train, y_train):
-    clf = KNeighborsClassifier(n_neighbors=2, weights='distance')
-    clf.fit(X_train, y_train)
-    return clf
-
-
-def build_fit_dt_model(X_train, y_train):
-    clf = DecisionTreeClassifier(criterion="gini", max_depth=5)
-    clf.fit(X_train, y_train)
-    return clf
 
 
 def grid_search_rf(classifier, X_train, y_train):
@@ -236,76 +184,6 @@ def grid_search_svm(classifier, X_train, y_train):
     print("Best score: ", best_result)
 
 
-def get_model_accuracy(clf, X_test, y_test):
-    y_pred = clf.predict(X_test)
-    acc = metrics.accuracy_score(y_test, y_pred)
-    return acc
-
-
-def build_clf_report(clf, X_test, y_test, model_name):
-    y_pred = clf.predict(X_test)
-    y_pred = (y_pred > 0.5)
-    # y_pred = np.argmax(y_pred, axis=1)
-    clf_report = metrics.classification_report(y_test, y_pred)
-    print("Classification Report For Model " + model_name + " : \n", clf_report)
-
-
-def build_conf_matrix(clf, X_test, y_test):
-    y_pred = clf.predict(X_test)
-    # y_pred = (y_pred > 0.5)
-    y_pred = np.argmax(y_pred, axis=1)
-    cm = metrics.confusion_matrix(y_test, y_pred, labels=[0, 1])
-    return cm
-
-
-def get_yhat_probs_classes(clf, X_test):
-    # predict probabilities for test set
-    yhat_classes = clf.predict(X_test, verbose=0)
-    yhat_classes = (yhat_classes > 0.5)
-    # predict crisp classes for test set
-    # yhat_classes = clf.predict_classes(X_test, verbose=0)
-    # reduce to 1d array
-    # yhat_probs = yhat_probs[:, 0]
-    # yhat_classes = yhat_classes[:, 0]
-    return yhat_classes
-
-
-def get_acc_pre_rec_f1(y_test, yhat_classes):
-    # accuracy: (tp + tn) / (p + n)
-    accuracy = metrics.accuracy_score(y_test, yhat_classes)
-    print('Accuracy: %f' % accuracy)
-    # precision tp / (tp + fp)
-    precision = metrics.precision_score(y_test, yhat_classes, pos_label=1, average='binary')
-    print('Precision: %f' % precision)
-    # recall: tp / (tp + fn)
-    recall = metrics.recall_score(y_test, yhat_classes)
-    print('Recall: %f' % recall)
-    # f1: 2 tp / (2 tp + fp + fn)
-    f1 = metrics.f1_score(y_test, yhat_classes)
-    print('F1 score: %f' % f1)
-
-
-def get_y_pred(clf, X_test):
-    y_pred = clf.predict(X_test)
-    y_pred = (y_pred > 0.5)
-    return y_pred
-
-
-def get_pre_rec(clf, X_test, y_test):
-    # predict probabilities
-    probs = clf.predict_proba(X_test)
-    # keep probabilities for the positive outcome only
-    probs = probs[:, 0]
-    # calculate precision-recall curve
-    precision, recall, thresholds = metrics.precision_recall_curve(y_test, probs)
-    return precision, recall, thresholds
-
-
-def get_y_proba(clf, X_test):
-    y_proba = clf.predict_proba(X_test)
-    #y_proba = y_proba[:, 0]
-    return y_proba
-
 
 def get_roc_curve(clf, X_test, y_test):
     # predict probabilities
@@ -345,13 +223,6 @@ def get_optimal_f1(clf, X_test, y_test):
             best_thr = prob_thr
     print("Best threshold %f || Best F1 Score %f" % (best_thr, best_f1))
 
-
-def roc_auc_score(clf, X_test, y_test):
-    y_proba = get_y_proba(clf, X_test)
-    # y_pred = (y_proba > 0.5)
-    y_pred = np.argmax(y_proba, axis=1)
-    auc_score = metrics.roc_auc_score(y_test, y_pred)
-    print(auc_score)
 
 
 def f1(y_true, y_pred):
