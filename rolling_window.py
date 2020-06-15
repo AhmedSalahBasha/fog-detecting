@@ -11,7 +11,7 @@ from tsfresh.feature_extraction import ComprehensiveFCParameters
 
 def rolling_window(input_df, win_size, step_size):
     """
-
+     Applying the rolling window technique that extracts features from the raw data
     :param input_df:
     :param win_size:
     :param step_size:
@@ -170,7 +170,7 @@ def _get_spectral_entropy(col, fs):
 
 def _freeze_index(data, sf, band1, band2, win_sec=None, relative=False):
     """
-
+    The power in the “freeze” band (3-8Hz) divided by the power in the locomotor band (0.5-3Hz)
     :param data:
     :param sf:
     :param band1:
@@ -185,7 +185,7 @@ def _freeze_index(data, sf, band1, band2, win_sec=None, relative=False):
 
 def _power_index(data, sf, band1, band2, win_sec=None, relative=False):
     """
-
+    The sum of the power in the “freeze” band (3-8Hz) plus the power in the locomotor band (0.5-3Hz)
     :param data:
     :param sf:
     :param band1:
@@ -198,9 +198,9 @@ def _power_index(data, sf, band1, band2, win_sec=None, relative=False):
     return pow_indx
 
 
-def _freeze_band_power(data, sf, band1, win_sec=None, relative=False):
+def _freeze_band_power(data, sf, freeze_band, win_sec=None, relative=False):
     """
-
+    The sum of the power spectrum in the “freeze” band of frequencies (3-8Hz) divided by the sampling frequency
     :param data:
     :param sf:
     :param band1:
@@ -208,13 +208,13 @@ def _freeze_band_power(data, sf, band1, win_sec=None, relative=False):
     :param relative:
     :return:
     """
-    freeze_power = _bandpower(data, sf, band1, win_sec, relative)
+    freeze_power = _bandpower(data, sf, freeze_band, win_sec, relative)
     return freeze_power
 
 
-def _locomotor_band_power(data, sf, band2, win_sec=None, relative=False):
+def _locomotor_band_power(data, sf, locomotor_band, win_sec=None, relative=False):
     """
-
+    The sum of the power spectrum in the locomotor band of frequencies (0.53Hz) divided by the sampling frequency
     :param data:
     :param sf:
     :param band2:
@@ -222,7 +222,7 @@ def _locomotor_band_power(data, sf, band2, win_sec=None, relative=False):
     :param relative:
     :return:
     """
-    locomotor_power = _bandpower(data, sf, band2, win_sec, relative)
+    locomotor_power = _bandpower(data, sf, locomotor_band, win_sec, relative)
     return locomotor_power
 
 
@@ -275,6 +275,7 @@ def _bandpower(data, sf, band, window_sec, relative):
     if relative:
         bp /= simps(psd, dx=freq_res)
     return bp
+
 
 
 # ---------------------- UN-USED FUNCTIONS ------------------------

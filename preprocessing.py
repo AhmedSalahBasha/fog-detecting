@@ -23,7 +23,7 @@ def get_rolled_dataframe(win_size, step_size):
     return full_dataset_rolled
 
 
-def create_rolled_train_dev_test_dataframes(win_size, step_size):
+def create_rolled_train_test_dataframes(win_size, step_size):
     """
     It calls
     :param win_size: rolling window size
@@ -31,16 +31,24 @@ def create_rolled_train_dev_test_dataframes(win_size, step_size):
     :return: None
     """
     dfs_list = cleaning.group_merged_dfs()  # returning lists of 35 dfs
-    train_dfs_list = dfs_list[:20]
-    dev_dfs_list = dfs_list[20:27]
-    test_dfs_list = dfs_list[27:]
+    test_dfs_list = [dfs_list[6]]     # Labels Count::  1-->37381  &  0-->7719
+    dfs_list.pop(6)
+    train_dfs_list = dfs_list
+
+    # TODO: Try to choose the most balanced test set for one patient
+    '''
+    for i, df in enumerate(dfs_list):
+        print("DataFrame Num. {0} \n {1}".format(i, df['Label'].value_counts()))
+    '''
+
+    test_set = _get_rolled_df(test_dfs_list, win_size, step_size)
+    test_set.to_csv('processed_data/test_set_w300_s40.csv', sep=',', index=False)
 
     train_set = _get_rolled_df(train_dfs_list, win_size, step_size)
-    dev_set = _get_rolled_df(dev_dfs_list, win_size, step_size)
-    test_set = _get_rolled_df(test_dfs_list, win_size, step_size)
-    train_set.to_csv('processed_data/train_set.csv', sep=',', index=False)
-    dev_set.to_csv('processed_data/dev_set.csv', sep=',', index=False)
-    test_set.to_csv('processed_data/test_set.csv', sep=',', index=False)
+    train_set.to_csv('processed_data/train_set_w300_s40.csv', sep=',', index=False)
+
+    full_rolled_set = pd.concat([train_set, test_set], ignore_index=True)
+    full_rolled_set.to_csv('processed_data/full_rolled_set_w300_s40.csv', sep=',', index=False)
 
 
 def _get_rolled_df(dfs_list, win_size, step_size):
@@ -51,12 +59,19 @@ def _get_rolled_df(dfs_list, win_size, step_size):
     :param step_size:
     :return:
     """
-    rolled_dfs = []
-    for df in dfs_list:
-        rolled_df = rw.rolling_window(df, win_size, step_size)
-        rolled_dfs.append(rolled_df)
-    dataset_rolled = pd.concat(rolled_dfs, ignore_index=True)
-    return dataset_rolled
+    if len(dfs_list) == 1:
+        print("Started Test Dataframe")
+        rolled_df = rw.rolling_window(dfs_list[0], win_size, step_size)
+        return rolled_df
+    elif len(dfs_list) > 1:
+        rolled_dfs = []
+        for i, df in enumerate(dfs_list):
+            print("Started Training Dataframe Number:  ", i)
+            rolled_df = rw.rolling_window(df, win_size, step_size)
+            rolled_dfs.append(rolled_df)
+        dataset_rolled = pd.concat(rolled_dfs, ignore_index=True)
+        return dataset_rolled
+
 
 
 def split_train_test_sets(fulldataset):

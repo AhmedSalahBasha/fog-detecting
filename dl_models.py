@@ -31,6 +31,7 @@ class DL_Parent_Model:
         return self.y_pred
 
     def conf_matrix(self, y_test):
+        y_test = (y_test > 0.5)
         self.cm = metrics.confusion_matrix(y_test, self.y_pred, labels=[0, 1])
         return self.cm
 
@@ -110,10 +111,9 @@ class LSTM_Model(DL_Parent_Model):
         scaled_X_test = scaler.transform(X_test.reshape(-1, X_test.shape[-1])).reshape(X_test.shape)
         return scaled_X_train, scaled_X_test
 
-    def one_hot_labels(self, y_train, y_dev, y_test):
+    def one_hot_labels(self, y_train, y_test):
         y_train = to_categorical(y_train, num_classes=2)
-        y_dev = to_categorical(y_dev, num_classes=2)
         y_test = to_categorical(y_test, num_classes=2)
-        return y_train, y_dev, y_test
+        return y_train, y_test
 
 

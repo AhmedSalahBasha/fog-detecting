@@ -60,12 +60,12 @@ def call_ann_model(input_dim):
 
 def call_lstm_model(input_dim):
     model = LSTM_Model(input_dim=input_dim,
-                       num_hidden_layers=3,
+                       num_hidden_layers=4,
                        hidden_layer_actv='relu',
                        output_layer_actv='softmax',
                        optimizer='adam',
-                       dropout_rate=0.5,
-                       metric=f1)
+                       dropout_rate=0.3,
+                       metric='accuracy')
     return model
 
 

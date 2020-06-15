@@ -37,7 +37,7 @@ def sensors_features(df, pos, group, sensor):
             if group != 'all':
                 lower_df = _get_features_group(lower_df, group)
             return lower_df
-    elif pos == 'upper':
+    elif pos == 'feet':
         if sensor == 'acc':
             upper_df = df.drop(lower_cols, axis=1)
             re_gyro = re.compile("^Gyro_*")
