@@ -1,9 +1,11 @@
 import pandas as pd
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
 import itertools
 import os
+from sklearn.metrics import confusion_matrix
 
 import scikitplot as skplt
 
@@ -65,6 +67,28 @@ def plot_conf_matrix(y_test, y_pred, pic_name, norm=True):
     plt.savefig('plots/'+pic_name+'.png')
 
 
+def plot_metrics(history, model_name):
+    mpl.rcParams['figure.figsize'] = (12, 10)
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    metrics =  ['loss', 'auc', 'precision', 'recall']
+    for n, metric in enumerate(metrics):
+        name = metric.replace("_"," ").capitalize()
+        plt.subplot(2,2,n+1)
+        plt.plot(history.epoch,  history.history[metric], color=colors[0], label='Train')
+        plt.plot(history.epoch, history.history['val_'+metric],
+                 color=colors[1], linestyle="--", label='Validation')
+        plt.xlabel('Epoch')
+        plt.ylabel(name)
+        if metric == 'loss':
+            plt.ylim([0, plt.ylim()[1]])
+        elif metric == 'auc':
+            plt.ylim([0.8,1])
+        else:
+            plt.ylim([0,1])
+        plt.legend()
+    plt.savefig('plots/metrics_' + model_name + '.png')
+
+
 def plot_loss_accuracy(history, pic_name):
     fig = plt.figure(figsize=(10, 8))
     # plot loss during training
@@ -84,23 +108,24 @@ def plot_loss_accuracy(history, pic_name):
     plt.savefig('plots/'+pic_name+'.png')
 
 
-def plot_loss_f1(history, pic_name):
+def plot_loss_metric(history, model_name):
     fig = plt.figure(figsize=(10, 8))
     # plot loss during training
     plt.subplot(211)
     plt.title('Loss')
-    plt.plot(history.history['loss'], label='train')
-    plt.plot(history.history['val_loss'], label='test')
+    plt.plot(list(history.history.values())[2], label='train')
+    plt.plot(list(history.history.values())[0], label='test')
     plt.legend()
     # plot accuracy during training
     plt.subplot(212)
-    plt.title('F1-Score')
-    plt.plot(history.history['f1'], label='train')
-    plt.plot(history.history['val_f1'], label='test')
+    plt.title(str(list(history.history.keys())[3]))
+    plt.plot(list(history.history.values())[3], label='train')
+    plt.plot(list(history.history.values())[1], label='test')
     plt.legend()
+    pic_name = str(list(history.history.keys())[3])
     if not os.path.exists('plots'):
         os.makedirs('plots')
-    plt.savefig('plots/'+pic_name+'.png')
+    plt.savefig('plots/loss_'+pic_name+'_'+model_name+'.png')
 
 
 def plot_clf_report(clf_report, pic_name):

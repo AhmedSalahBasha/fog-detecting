@@ -51,7 +51,7 @@ class ANN_Model(DL_Parent_Model):
 
     def __initialize_ann_model(self):
         clf = Sequential()
-        units = int(self.input_dim / 2)
+        units = int(self.input_dim)
         clf.add(Dense(units=units, init='uniform', activation=self.hidden_layer_actv, input_dim=self.input_dim))
         clf.add(Dropout(rate=self.dropout_rate))
         for i in range(self.num_hidden_layers):
@@ -59,6 +59,7 @@ class ANN_Model(DL_Parent_Model):
             clf.add(Dropout(rate=self.dropout_rate))
         clf.add(Dense(units=1, init='uniform', activation=self.output_layer_actv))
         clf.compile(optimizer=self.optimizer, loss='binary_crossentropy', metrics=[self.metric])
+        print(clf.summary())
         return clf
 
     def features_scaling(self, X_train, X_test, min_max:bool=False):
@@ -98,7 +99,7 @@ class LSTM_Model(DL_Parent_Model):
         clf.add(Dense(units=units, activation=self.hidden_layer_actv))
         clf.add(Dropout(rate=self.dropout_rate))
         clf.add(Dense(units=2, activation=self.output_layer_actv))
-        clf.compile(loss='categorical_crossentropy', optimizer=self.optimizer, metrics=[self.metric])
+        clf.compile(loss='binary_crossentropy', optimizer=self.optimizer, metrics=[self.metric])
         print(clf.summary())
         return clf
 

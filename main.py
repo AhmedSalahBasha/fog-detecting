@@ -6,7 +6,7 @@ import datetime
 import features_selection as fs
 from imblearn.over_sampling import SMOTE, ADASYN
 from collections import Counter
-from plotting import plot_loss_f1, plot_loss_accuracy
+from plotting import plot_loss_metric, plot_loss_accuracy, plot_metrics
 
 
 # PRE-PROCESSING:: ATTENTION OF ACTIVATING THE FOLLOWING LINE - IT TAKES AROUND 12 HOURS
@@ -46,9 +46,9 @@ print("testing set shape: ", X_test.shape)
 print("testing set label count: \n", y_test.value_counts())
 
 # Modelling
-models = ['SVM', 'RF', 'DT', 'KNN']
+models = ['ANN']
 for m in models:
-    print("Modelling model " + m + " start:  ", datetime.datetime.now())
+    print("Model " + m + " started at:  ", datetime.datetime.now())
 
     if m == 'SVM':
         model = modelling.call_svm_model()
@@ -90,27 +90,26 @@ for m in models:
         model = modelling.call_knn_dtw_model()
     elif m == 'ANN':
         input_dim = X_train.shape[1]
-        # model = modelling.call_ann_model(input_dim)
+        num_hidden_layers = 5
+        model = modelling.call_ann_model(input_dim, num_hidden_layers)
+        X_train, X_test = model.features_scaling(X_train, X_test)
+        model.fit(X_train, y_train, X_test, y_test, epochs=30, batch_size=64, verbose=2)
+        plot_metrics(history=model.history, model_name='ANN')
+        #plot_loss_metric(history=model.history, model_name="ANN")
     elif m == 'LSTM':
-        from sklearn.model_selection import train_test_split
-        TIME_STEPS = 600
-        STEP = 60
-        # Training and Testing on the raw data
-        dataset = pd.read_csv('data/full_dataset.csv', sep=',')
-        dataset.dropna(inplace=True)
-        X_train, X_test, y_train, y_test = train_test_split(dataset.drop('Label', axis=1), dataset['Label'], train_size=0.6, shuffle=False)
-        X_train_resampled, y_train_resampled = SMOTE().fit_resample(X_train, y_train)
-        X_train, y_train = modelling.create_3d_dataset(X_train_resampled, y_train_resampled, time_steps=TIME_STEPS, step=STEP)
+        TIME_STEPS = 5
+        STEP = 1
+        # X_train_resampled, y_train_resampled = SMOTE().fit_resample(X_train, y_train)
+        X_train, y_train = modelling.create_3d_dataset(X_train, y_train, time_steps=TIME_STEPS, step=STEP)
         X_test, y_test = modelling.create_3d_dataset(X_test, y_test, time_steps=TIME_STEPS, step=STEP)
-        print('Training Label Value Counts: \n', y_train_resampled.value_counts())
+        print('Training Label Value Counts: \n', np.unique(y_train, return_counts=True))
         print('Test Label Value Counts: \n', np.unique(y_test, return_counts=True))
         input_dim = (X_train.shape[1], X_train.shape[2])
         model = modelling.call_lstm_model(input_dim)
         X_train, X_test = model.features_scaling(X_train, X_test, min_max=True)
         y_train, y_test = model.one_hot_labels(y_train, y_test)
-        model.fit(X_train, y_train, X_test, y_test, epochs=10, batch_size=32, verbose=2)
-        print("Accuracy: ", model.evaluate(X_test, y_test))
+        model.fit(X_train, y_train, X_test, y_test, epochs=30, batch_size=32, verbose=2)
         model.predict(X_test)
-        plot_loss_accuracy(history=model.history, pic_name="loss_accuracy")
+        plot_loss_accuracy(history=model.history, pic_name="loss_acc_lstm")
 print("Modelling end:  ", datetime.datetime.now())
 

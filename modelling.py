@@ -1,7 +1,9 @@
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-
+from tensorflow import keras
 import sklearn.metrics as metrics
 from sklearn.model_selection import GridSearchCV
+from keras.optimizers import SGD
+from keras.metrics import AUC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
@@ -48,14 +50,24 @@ def call_knn_model():
 def call_knn_dtw_model():
     KNN_DTW_Model(n_neighbors=10, weights='distance')
 
-def call_ann_model(input_dim):
+def call_ann_model(input_dim, num_hidden_layers):
+    METRICS = [
+        keras.metrics.TruePositives(name='tp'),
+        keras.metrics.FalsePositives(name='fp'),
+        keras.metrics.TrueNegatives(name='tn'),
+        keras.metrics.FalseNegatives(name='fn'),
+        keras.metrics.BinaryAccuracy(name='accuracy'),
+        keras.metrics.Precision(name='precision'),
+        keras.metrics.Recall(name='recall'),
+        keras.metrics.AUC(name='auc'),
+    ]
     model = ANN_Model(input_dim=input_dim,
-                      num_hidden_layers=5,
+                      num_hidden_layers=num_hidden_layers,
                       hidden_layer_actv='relu',
                       output_layer_actv='sigmoid',
                       optimizer='adam',
                       dropout_rate=0.4,
-                      metric=f1)
+                      metric=METRICS)
     return model
 
 def call_lstm_model(input_dim):
