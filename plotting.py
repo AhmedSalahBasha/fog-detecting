@@ -89,6 +89,19 @@ def plot_metrics(history, model_name):
     plt.savefig('plots/metrics_' + model_name + '.png')
 
 
+def plot_cm(true_labels, predictions, model_name, p=0.5):
+    if model_name == 'LSTM':
+        cm = confusion_matrix(true_labels, predictions)
+    else:
+        cm = confusion_matrix(true_labels, predictions > p)
+    plt.figure(figsize=(5, 5))
+    sns.heatmap(cm, annot=True, fmt="d")
+    plt.title('Confusion matrix @{:.2f}'.format(p))
+    plt.ylabel('Actual label')
+    plt.xlabel('Predicted label')
+    plt.savefig('plots/cm_' + model_name + '.png')
+
+
 def plot_loss_accuracy(history, pic_name):
     fig = plt.figure(figsize=(10, 8))
     # plot loss during training

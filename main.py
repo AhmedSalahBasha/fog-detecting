@@ -6,7 +6,7 @@ import datetime
 import features_selection as fs
 from imblearn.over_sampling import SMOTE, ADASYN
 from collections import Counter
-from plotting import plot_loss_metric, plot_loss_accuracy, plot_metrics
+from plotting import plot_loss_metric, plot_loss_accuracy, plot_metrics, plot_cm
 
 
 # PRE-PROCESSING:: ATTENTION OF ACTIVATING THE FOLLOWING LINE - IT TAKES AROUND 12 HOURS
@@ -37,18 +37,20 @@ train_df = fs.drop_features(train_df, drop_stat_features)
 test_df = fs.drop_features(test_df, drop_stat_features)
 '''
 
-X_train, y_train = train_set.drop('Label', axis=1), train_set['Label']
-X_test, y_test = test_set.drop('Label', axis=1), test_set['Label']
 
-print("training set shape: ", X_train.shape)
-print("training set label count: \n", y_train.value_counts())
-print("testing set shape: ", X_test.shape)
-print("testing set label count: \n", y_test.value_counts())
 
 # Modelling
-models = ['ANN']
+models = ['ANN', 'LSTM', ]
 for m in models:
     print("Model " + m + " started at:  ", datetime.datetime.now())
+
+    X_train, y_train = train_set.drop('Label', axis=1), train_set['Label']
+    X_test, y_test = test_set.drop('Label', axis=1), test_set['Label']
+
+    print("training set shape: ", X_train.shape)
+    print("training set label count: \n", y_train.value_counts())
+    print("testing set shape: ", X_test.shape)
+    print("testing set label count: \n", y_test.value_counts())
 
     if m == 'SVM':
         model = modelling.call_svm_model()
@@ -88,28 +90,45 @@ for m in models:
         model.clf_report(y_test)
     elif m == 'KNN_DTW':
         model = modelling.call_knn_dtw_model()
+        model.fit(X_train, y_train)
+        model.predict(X_test)
+        model.accuracy(y_test)
+        model.f1_score(y_test)
+        model.auc_score(y_test)
+        model.conf_matrix(y_test)
+        model.clf_report(y_test)
     elif m == 'ANN':
         input_dim = X_train.shape[1]
-        num_hidden_layers = 5
-        model = modelling.call_ann_model(input_dim, num_hidden_layers)
+        NUM_HIDDEN_LAYERS = 10
+        BATCH_SIZE = 64
+        EPOCHS = 50
+        model = modelling.call_ann_model(input_dim, NUM_HIDDEN_LAYERS)
         X_train, X_test = model.features_scaling(X_train, X_test)
-        model.fit(X_train, y_train, X_test, y_test, epochs=30, batch_size=64, verbose=2)
-        plot_metrics(history=model.history, model_name='ANN')
-        #plot_loss_metric(history=model.history, model_name="ANN")
+        model.fit(X_train, y_train, X_test, y_test, epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=2)
+        model.evaluate(X_test, y_test, batch_size=BATCH_SIZE)
+        y_pred = model.predict(X_test)
+        plot_metrics(history=model.history, model_name=model.model_name)
+        plot_cm(true_labels=y_test, predictions=y_pred, model_name=model.model_name)
+
     elif m == 'LSTM':
-        TIME_STEPS = 5
+        TIME_STEPS = 3
         STEP = 1
+        NUM_HIDDEN_LAYERS = 3
+        BATCH_SIZE = 64
+        EPOCHS = 30
         # X_train_resampled, y_train_resampled = SMOTE().fit_resample(X_train, y_train)
         X_train, y_train = modelling.create_3d_dataset(X_train, y_train, time_steps=TIME_STEPS, step=STEP)
         X_test, y_test = modelling.create_3d_dataset(X_test, y_test, time_steps=TIME_STEPS, step=STEP)
         print('Training Label Value Counts: \n', np.unique(y_train, return_counts=True))
         print('Test Label Value Counts: \n', np.unique(y_test, return_counts=True))
         input_dim = (X_train.shape[1], X_train.shape[2])
-        model = modelling.call_lstm_model(input_dim)
+        model = modelling.call_lstm_model(input_dim, NUM_HIDDEN_LAYERS)
         X_train, X_test = model.features_scaling(X_train, X_test, min_max=True)
         y_train, y_test = model.one_hot_labels(y_train, y_test)
-        model.fit(X_train, y_train, X_test, y_test, epochs=30, batch_size=32, verbose=2)
-        model.predict(X_test)
-        plot_loss_accuracy(history=model.history, pic_name="loss_acc_lstm")
+        model.fit(X_train, y_train, X_test, y_test, epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=2)
+        model.evaluate(X_test, y_test, batch_size=BATCH_SIZE)
+        y_pred = model.predict(X_test)
+        plot_metrics(history=model.history, model_name=model.model_name)
+        plot_cm(true_labels=y_test.argmax(axis=1), predictions=y_pred.argmax(axis=1), model_name=model.model_name)
 print("Modelling end:  ", datetime.datetime.now())
 

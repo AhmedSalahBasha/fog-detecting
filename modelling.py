@@ -29,6 +29,17 @@ from ml_models import SVM_Model, RF_Model, DT_Model, KNN_Model, KNN_DTW_Model
 from dl_models import ANN_Model, LSTM_Model
 
 
+METRICS = [
+        keras.metrics.TruePositives(name='tp'),
+        keras.metrics.FalsePositives(name='fp'),
+        keras.metrics.TrueNegatives(name='tn'),
+        keras.metrics.FalseNegatives(name='fn'),
+        keras.metrics.BinaryAccuracy(name='accuracy'),
+        keras.metrics.Precision(name='precision'),
+        keras.metrics.Recall(name='recall'),
+        keras.metrics.AUC(name='auc'),
+    ]
+
 def call_svm_model():
     model = SVM_Model(gamma=0.001, C=50, kernel='sigmoid')
     return model
@@ -51,16 +62,6 @@ def call_knn_dtw_model():
     KNN_DTW_Model(n_neighbors=10, weights='distance')
 
 def call_ann_model(input_dim, num_hidden_layers):
-    METRICS = [
-        keras.metrics.TruePositives(name='tp'),
-        keras.metrics.FalsePositives(name='fp'),
-        keras.metrics.TrueNegatives(name='tn'),
-        keras.metrics.FalseNegatives(name='fn'),
-        keras.metrics.BinaryAccuracy(name='accuracy'),
-        keras.metrics.Precision(name='precision'),
-        keras.metrics.Recall(name='recall'),
-        keras.metrics.AUC(name='auc'),
-    ]
     model = ANN_Model(input_dim=input_dim,
                       num_hidden_layers=num_hidden_layers,
                       hidden_layer_actv='relu',
@@ -70,14 +71,14 @@ def call_ann_model(input_dim, num_hidden_layers):
                       metric=METRICS)
     return model
 
-def call_lstm_model(input_dim):
+def call_lstm_model(input_dim, num_hidden_layers):
     model = LSTM_Model(input_dim=input_dim,
-                       num_hidden_layers=4,
+                       num_hidden_layers=num_hidden_layers,
                        hidden_layer_actv='relu',
                        output_layer_actv='softmax',
                        optimizer='adam',
-                       dropout_rate=0.3,
-                       metric='accuracy')
+                       dropout_rate=0.4,
+                       metric=METRICS)
     return model
 
 

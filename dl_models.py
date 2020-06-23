@@ -22,12 +22,14 @@ class DL_Parent_Model:
                                       epochs=epochs, batch_size=batch_size,
                                       verbose=verbose, shuffle=False)
 
-    def evaluate(self, X, y):
-        _, accuracy = self.model.evaluate(X, y, verbose=0)
-        return accuracy
+    def evaluate(self, X, y, batch_size):
+        results = self.model.evaluate(X, y, batch_size=batch_size, verbose=0)
+        for name, value in zip(self.model.metrics_names, results):
+            print(name, ': ', value)
+        print()
 
     def predict(self, X_test):
-        self.y_pred = self.model.predict_classes(X_test)
+        self.y_pred = self.model.predict(X_test)
         return self.y_pred
 
     def conf_matrix(self, y_test):
@@ -38,7 +40,7 @@ class DL_Parent_Model:
 
 class ANN_Model(DL_Parent_Model):
     def __init__(self, input_dim, num_hidden_layers, hidden_layer_actv, output_layer_actv, optimizer, dropout_rate, metric):
-        self.model_name = 'ArtificialNeuralNetwork'
+        self.model_name = 'ANN'
         self.input_dim = input_dim
         self.num_hidden_layers = num_hidden_layers
         self.hidden_layer_actv = hidden_layer_actv
@@ -74,7 +76,7 @@ class ANN_Model(DL_Parent_Model):
 
 class LSTM_Model(DL_Parent_Model):
     def __init__(self, input_dim, num_hidden_layers, hidden_layer_actv, output_layer_actv, optimizer, dropout_rate, metric):
-        self.model_name = 'ArtificialNeuralNetwork'
+        self.model_name = 'LSTM'
         self.input_dim = input_dim
         self.num_hidden_layers = num_hidden_layers
         self.hidden_layer_actv = hidden_layer_actv
@@ -88,7 +90,7 @@ class LSTM_Model(DL_Parent_Model):
 
     def __initialize_lstm_model(self):
         clf = Sequential()
-        units = int(self.input_dim[1]/2)
+        units = int(self.input_dim[1])
         clf.add(LSTM(units=units, input_shape=self.input_dim, return_sequences=True))
         clf.add(Dropout(rate=self.dropout_rate))
         for i in range(self.num_hidden_layers):
