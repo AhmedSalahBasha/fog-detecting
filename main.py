@@ -25,8 +25,8 @@ print(sorted(Counter(y_train_resampled).items()))
 
 '''
 # Feature Selection :: #group --> (stat, spec, temp, freq, all)   #pos --> (feet, lower)   #sensor --> (acc, gyro, both)
-train_set = fs.sensors_features(train_set, pos='feet', group='spec', sensor='acc')
-test_set = fs.sensors_features(test_set, pos='feet', group='spec', sensor='acc')
+train_set = fs.sensors_features(train_set, pos='lower', group='all', sensor='gyro')
+test_set = fs.sensors_features(test_set, pos='lower', group='all', sensor='gyro')
 '''
 
 '''
@@ -38,9 +38,8 @@ test_df = fs.drop_features(test_df, drop_stat_features)
 '''
 
 
-
 # Modelling
-models = ['ANN', 'LSTM', ]
+models = ['ANN']
 for m in models:
     print("Model " + m + " started at:  ", datetime.datetime.now())
 
@@ -99,9 +98,9 @@ for m in models:
         model.clf_report(y_test)
     elif m == 'ANN':
         input_dim = X_train.shape[1]
-        NUM_HIDDEN_LAYERS = 10
+        NUM_HIDDEN_LAYERS = 5
         BATCH_SIZE = 64
-        EPOCHS = 50
+        EPOCHS = 100
         model = modelling.call_ann_model(input_dim, NUM_HIDDEN_LAYERS)
         X_train, X_test = model.features_scaling(X_train, X_test)
         model.fit(X_train, y_train, X_test, y_test, epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=2)
@@ -109,7 +108,6 @@ for m in models:
         y_pred = model.predict(X_test)
         plot_metrics(history=model.history, model_name=model.model_name)
         plot_cm(true_labels=y_test, predictions=y_pred, model_name=model.model_name)
-
     elif m == 'LSTM':
         TIME_STEPS = 3
         STEP = 1
