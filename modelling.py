@@ -164,7 +164,7 @@ def grid_search_rf(classifier, X_train, y_train):
     print("Features Importance:  ", features_importance)
 
 
-def grid_search_svm(classifier, X_train, y_train):
+def grid_search_svm(X_train, y_train):
     """
     function for tuning the SVM classifier
     :param X_train: X training dataframe
@@ -172,19 +172,12 @@ def grid_search_svm(classifier, X_train, y_train):
     :return: the best parameters for the classifier
     """
     # Set the parameters by cross-validation
-    tuned_parameters = [{'kernel': ['rbf'],
-                         'gamma': [1e-2, 1e-3, 1e-4, 1e-5],
-                         'C': [0.001, 0.10, 0.1, 10, 25, 50, 100, 1000]
-                         },
-                        {'kernel': ['sigmoid'],
-                         'gamma': [1e-2, 1e-3, 1e-4, 1e-5],
-                         'C': [0.001, 0.10, 0.1, 10, 25, 50, 100, 1000]
-                         },
-                        {'kernel': ['linear'],
-                         'C': [0.001, 0.10, 0.1, 10, 25, 50, 100, 1000]
+    tuned_parameters = [{'kernel': ['rbf', 'sigmoid', 'poly'],
+                         'gamma': [1e-2, 1e-3, 1e-4],
+                         'C': [0.01, 0.1, 10, 100, 1000]
                          }
                         ]
-
+    classifier = svm.SVC(random_state=42)
     gd_sr = GridSearchCV(estimator=classifier,
                          param_grid=tuned_parameters,
                          scoring='accuracy',

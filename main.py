@@ -23,11 +23,11 @@ X_train_resampled = X_train_resampled.drop('Label', axis=1)
 print(sorted(Counter(y_train_resampled).items()))
 '''
 
-'''
-# Feature Selection :: #group --> (stat, spec, temp, freq, all)   #pos --> (feet, lower)   #sensor --> (acc, gyro, both)
-train_set = fs.sensors_features(train_set, pos='lower', group='all', sensor='gyro')
-test_set = fs.sensors_features(test_set, pos='lower', group='all', sensor='gyro')
-'''
+
+# Feature Selection :: #group --> (stat, spec, temp, freq, all, list_of_features_names)   #pos --> (feet, lower)   #sensor --> (acc, gyro, both)
+train_set = fs.sensors_features(train_set, pos='feet', group=['avg', 'med', 'std', 'max', 'min', 'var', 'fi', 'pi', 'fp', 'lp'], sensor='both')
+test_set = fs.sensors_features(test_set, pos='feet', group=['avg', 'med', 'std', 'max', 'min', 'var', 'fi', 'pi', 'fp', 'lp'], sensor='both')
+
 
 '''
 # Drop Unimportant Features -- Make sure to drop the same columns list from all dataframes
@@ -39,7 +39,7 @@ test_df = fs.drop_features(test_df, drop_stat_features)
 
 
 # Modelling
-models = ['ANN']
+models = ['SVM']
 for m in models:
     print("Model " + m + " started at:  ", datetime.datetime.now())
 
@@ -52,6 +52,7 @@ for m in models:
     print("testing set label count: \n", y_test.value_counts())
 
     if m == 'SVM':
+        #modelling.grid_search_svm(X_train, y_train)
         model = modelling.call_svm_model()
         model.fit(X_train, y_train)
         model.predict(X_test)
@@ -60,6 +61,7 @@ for m in models:
         model.auc_score(y_test)
         model.conf_matrix(y_test)
         model.clf_report(y_test)
+
     elif m == 'RF':
         model = modelling.call_rf_model()
         model.fit(X_train, y_train)
