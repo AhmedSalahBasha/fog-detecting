@@ -20,6 +20,9 @@ def split_full_dataset():
                     shutil.copy(f, dir_name)
 
 
+#TODO: add patient code and trial number to each dataframe
+#TODO: take care of transitions between trials for each tutor
+
 def group_merged_dfs():
     patients = ['G04', 'G06', 'G07', 'G08', 'G11', 'P379', 'P551', 'P812']
     trials = ['trial_1', 'trial_2']
@@ -39,6 +42,8 @@ def group_merged_dfs():
                     dfs.append(df)
                 merged_df = merge_dataframes(dfs)
                 merged_df = apply_new_target(merged_df)
+                merged_df['patient'] = p
+                merged_df['trials'] = t
                 trials_merged_dfs.append(merged_df)
     return trials_merged_dfs
 
@@ -57,7 +62,7 @@ def apply_new_target(df):
     return df
 
 
-def merge_dataframes(dfs_list, key='Time'):
+def merge_dataframes(dfs_list):
     df_upper = dfs_list[0].set_index('Time').join(dfs_list[1].set_index('Time'), lsuffix='_left', rsuffix='_right')
     df_lower = dfs_list[2].set_index('Time').join(dfs_list[3].set_index('Time'), lsuffix='_lowerleft', rsuffix='_lowerright')
     merged_df = df_upper.join(df_lower, on='Time', how='inner')
