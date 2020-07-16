@@ -6,21 +6,15 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 
-def get_rolled_dataframe(win_size, step_size):
+def get_full_dataframe():
     """
 
-    :param win_size:
-    :param step_size:
     :return:
     """
-    dfs_list = cleaning.group_merged_dfs()  # 35 dfs
-    rolled_dfs = []
-    for df in dfs_list:
-        rolled_df = rw.rolling_window(df, win_size, step_size)
-        rolled_dfs.append(rolled_df)
-    full_dataset_rolled = pd.concat(rolled_dfs, ignore_index=True)
-    full_dataset_rolled.to_csv('processed_data/freq_dom_features_rolled_dataset.csv', sep=',', index=False)
-    return full_dataset_rolled
+    dfs_list = cleaning.group_merged_dfs()
+    full_dataset = pd.concat(dfs_list, ignore_index=True)
+    full_dataset.to_csv('processed_data/full_dataset.csv', sep=',', index=False)
+    return full_dataset
 
 
 def create_rolled_train_test_dataframes(win_size, step_size):
@@ -35,8 +29,8 @@ def create_rolled_train_test_dataframes(win_size, step_size):
     dfs_list.pop(6)
     train_dfs_list = dfs_list
 
-    # TODO: Try to choose the most balanced test set for one patient
     '''
+    #Try to choose the most balanced test set for one patient
     for i, df in enumerate(dfs_list):
         print("DataFrame Num. {0} \n {1}".format(i, df['Label'].value_counts()))
     '''
