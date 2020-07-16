@@ -5,14 +5,15 @@ import shutil
 
 
 def split_full_dataset():
-    patients = ['G04', 'G06', 'G07', 'G08', 'G11', 'P379', 'P551', 'P812']
-    os.makedirs('splitted_full_dateset/')
+    patients = ['G04', 'G05', 'G06', 'G07', 'G08', 'G09', 'G11',
+                'P231', 'P351', 'P379', 'P551', 'P623', 'P645', 'P812', 'P876', 'P940']
+    os.makedirs('splitted_full_dataset/')
 
     for p in patients:
-        if not os.path.exists('splitted_full_dateset/'+p):
-            os.makedirs('splitted_full_dateset/'+p)
-        for t in range(1, 3):
-            dir_name = 'splitted_full_dateset/'+p+'/trial_'+str(t)
+        if not os.path.exists('splitted_full_dataset/'+p):
+            os.makedirs('splitted_full_dataset/'+p)
+        for t in range(1, 4):
+            dir_name = 'splitted_full_dataset/'+p+'/trial_'+str(t)
             if not os.path.exists(dir_name):
                 os.makedirs(dir_name)
                 files = glob.glob('full_dataset/**/'+p+'_*_trial_'+str(t)+'_out_*.csv', recursive=True)
@@ -20,31 +21,27 @@ def split_full_dataset():
                     shutil.copy(f, dir_name)
 
 
-#TODO: add patient code and trial number to each dataframe
-#TODO: take care of transitions between trials for each tutor
-
 def group_merged_dfs():
-    patients = ['G04', 'G06', 'G07', 'G08', 'G11', 'P379', 'P551', 'P812']
-    trials = ['trial_1', 'trial_2']
+    patients = os.listdir('splitted_full_dataset/')
     files_sensors_position = ['left_foot', 'right_foot', 'lower_left_foot', 'lower_right_foot']
     cols = ['Time', 'Acc_1', 'Acc_2', 'Acc_3', 'Gyro_1', 'Gyro_2', 'Gyro_3', 'Label1', 'Label2']
     trials_merged_dfs = []
     for p in patients:
+        trials = os.listdir('splitted_full_dataset/' + p + '/')
         for t in trials:
             position_files_dict = {}
             for s in files_sensors_position:
-                position_files_list = glob.glob('splitted_full_dateset/'+p+'/'+t+'/*_out_' + s + '.csv')
+                position_files_list = glob.glob('splitted_full_dataset/'+p+'/'+t+'/*_out_' + s + '.csv')
                 position_files_dict[s] = position_files_list
-            for i in range(len(position_files_dict['left_foot'])):
-                dfs = []
-                for k, files_list in position_files_dict.items():
-                    df = pd.read_csv(files_list[i], sep=',', usecols=cols)
-                    dfs.append(df)
-                merged_df = merge_dataframes(dfs)
-                merged_df = apply_new_target(merged_df)
-                merged_df['patient'] = p
-                merged_df['trials'] = t
-                trials_merged_dfs.append(merged_df)
+            dfs = []
+            for k, files_list in position_files_dict.items():
+                df = pd.read_csv(files_list[0], sep=',', usecols=cols)
+                dfs.append(df)
+            merged_df = merge_dataframes(dfs)
+            merged_df = apply_new_target(merged_df)
+            merged_df['patient'] = p
+            merged_df['trials'] = t
+            trials_merged_dfs.append(merged_df)
     return trials_merged_dfs
 
 
