@@ -3,6 +3,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn import svm
+from sklearn.naive_bayes import GaussianNB
 import sklearn.metrics as metrics
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from dtaidistance import dtw
@@ -46,6 +47,13 @@ class ML_Parent_Model:
         scaled_X_train = sc.fit_transform(X_train)
         scaled_X_test = sc.transform(X_test)
         return scaled_X_train, scaled_X_test
+
+
+class GNB_Model(ML_Parent_Model):
+    def __init__(self):
+        self.model_name = 'GaussianNaiveBayes'
+        self.model = GaussianNB()
+        ML_Parent_Model.__init__(self, model=self.model)
 
 
 class SVM_Model(ML_Parent_Model):
