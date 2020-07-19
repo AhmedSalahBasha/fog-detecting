@@ -6,6 +6,32 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 
+def apply_rolling_on_full_dataframe(win_size, step_size):
+    full_dataset = pd.read_csv('processed_data/full_dataset.csv', sep=',')
+    patients = list(full_dataset['patient'].unique())
+    rolled_dfs = []
+    for p in patients:
+        print('========= Started with Patient: ' + str(p) + '============')
+        p_df = full_dataset[full_dataset['patient'] == p]
+        trials = list(p_df['trials'].unique())
+        for t in trials:
+            print('========= Started with Trial: ' + str(t) + '============')
+            t_df = p_df[p_df['trials'] == t]
+            rolled_df = rw.rolling_window(t_df, win_size, step_size)
+            rolled_dfs.append(rolled_df)
+    full_rolled_df = pd.concat(rolled_dfs, ignore_index=True)
+    full_rolled_df.to_csv('processed_data/full_rolled_dataset_w400_s40.csv', sep=',', index=False)
+    return full_rolled_df
+
+
+def leave_one_patient_out(test_patient):
+    full_dataset = pd.read_csv('processed_data/full_rolled_dataset_w400_s40.csv', sep=',')
+    test_df = full_dataset[(full_dataset['patient'] == test_patient) & (full_dataset['trials'] == 'trial_1')]
+    train_df = pd.concat([full_dataset, test_df, test_df]).drop_duplicates(keep=False)
+    return train_df, test_df
+
+
+
 def get_full_dataframe():
     """
 

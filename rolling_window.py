@@ -9,7 +9,7 @@ from tsfresh.feature_extraction import ComprehensiveFCParameters
 
 
 
-def rolling_window(input_df, win_size, step_size):
+def rolling_window(df, win_size, step_size):
     """
      Applying the rolling window technique that extracts features from the raw data
     :param input_df:
@@ -17,12 +17,17 @@ def rolling_window(input_df, win_size, step_size):
     :param step_size:
     :return:
     """
+    input_df = df.copy()
     fs = 200     # Signal sampling frequency
     win_sec = win_size / fs
     columns_list = list(input_df.columns)
     for col in input_df.columns:
         if col == 'Label':
             input_df[col] = input_df[col].rolling(win_size).apply(_get_rolled_label)[step_size - 1::step_size]  # label
+        elif col == 'patient':
+            pass
+        elif col == 'trials':
+            pass
         else:
             print('### Started Column :  ' + col + ' At time:  ' + str(datetime.datetime.now()) + '######')
             # =============== STATISTICAL FEATURES ================
@@ -62,8 +67,10 @@ def rolling_window(input_df, win_size, step_size):
                                                                                  args=(fs,))[step_size - 1::step_size]  # total energy
             input_df[col + '_abs_eng'] = input_df[col].rolling(win_size).apply(tsfel.abs_energy)[step_size - 1::step_size]  # absolute energy
             input_df[col + '_dist'] = input_df[col].rolling(win_size).apply(tsfel.distance)[step_size - 1::step_size]  # distance
-    input_df = input_df.dropna()
     input_df = _drop_columns_except_target(input_df, columns_list)
+    input_df['patient'] = df.iloc[0]['patient']
+    input_df['trials'] = df.iloc[0]['trials']
+    input_df = input_df.dropna()
     print('======== FINISHED DATAFRAME AT TIME:  ' + str(datetime.datetime.now()) + '==========')
     return input_df
 
