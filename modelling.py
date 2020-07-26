@@ -25,7 +25,7 @@ import keras_metrics as km
 from keras import backend as K
 from keras.metrics import Precision, Recall
 
-from ml_models import SVM_Model, RF_Model, DT_Model, KNN_Model, KNN_DTW_Model
+from ml_models import SVM_Model, RF_Model, DT_Model, KNN_Model, KNN_DTW_Model, GNB_Model
 from dl_models import ANN_Model, LSTM_Model
 
 
@@ -44,22 +44,25 @@ def call_svm_model():
     model = SVM_Model(gamma=0.001, C=50, kernel='sigmoid')
     return model
 
-
 def call_rf_model():
     model = RF_Model(n_estimators=400, max_depth=20, criterion='entropy', min_samples_split=4)
     return model
-
 
 def call_dt_model():
     model = DT_Model(max_depth=10, criterion='gini', min_samples_split=2)
     return model
 
+def call_gnb_model():
+    model = GNB_Model()
+    return model
+
 def call_knn_model():
-    model = KNN_Model(n_neighbors=10, weights='distance', metric='minkowski')
+    model = KNN_Model(n_neighbors=1, weights='distance', metric='minkowski')
     return model
 
 def call_knn_dtw_model():
-    KNN_DTW_Model(n_neighbors=10, weights='distance')
+    model = KNN_DTW_Model(n_neighbors=1, weights='distance')
+    return model
 
 def call_ann_model(input_dim, num_hidden_layers):
     model = ANN_Model(input_dim=input_dim,

@@ -23,24 +23,39 @@ class ML_Parent_Model:
     def accuracy(self, y_test):
         acc = metrics.accuracy_score(y_test, self.y_pred)
         print('Accuracy Score: ', acc)
+        return acc
 
     def f1_score(self, y_test):
         f1 = metrics.f1_score(y_test, self.y_pred)
         print('F1 Score: ', f1)
+        return f1
 
     def auc_score(self, y_test):
-        auc = metrics.roc_auc_score(y_test, self.y_pred)
+        auc = 0
+        try:
+            auc = metrics.roc_auc_score(y_test, self.y_pred)
+        except ValueError:
+            pass
         print('AUC Score: ', auc)
+        return auc
 
     def clf_report(self, y_test):
         y_pred = (self.y_pred > 0.5)
         # y_pred = np.argmax(y_pred, axis=1)
-        print('Classification Report: \n', metrics.classification_report(y_test, y_pred))
+        report = None
+        try:
+            report = metrics.classification_report(y_test, y_pred, output_dict=True)
+        except ValueError:
+            pass
+        print('Classification Report: \n', report)
+        return report
 
     def conf_matrix(self, y_test):
         y_pred = (self.y_pred > 0.5)
         # y_pred = np.argmax(y_pred, axis=1)
-        print('Confusion Matrix: \n', metrics.confusion_matrix(y_test, y_pred, labels=[0, 1]))
+        matrix = metrics.confusion_matrix(y_test, y_pred, labels=[0, 1])
+        print('Confusion Matrix: \n', matrix)
+        return matrix
 
     def features_scaling(self, X_train, X_test):
         sc = StandardScaler()
@@ -101,7 +116,7 @@ class KNN_Model(ML_Parent_Model):
 
 class KNN_DTW_Model(ML_Parent_Model):
     def __init__(self, n_neighbors, weights):
-        self.model_name = 'K-NearestNeighbors'
+        self.model_name = 'K-NearestNeighbors_DynamicTimeWrapping'
         self.n_neighbors = n_neighbors
         self.weights = weights
         self.metric = dtw.distance_fast     # calculating distance using Dynamic Time Wrapping Algorithm

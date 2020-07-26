@@ -26,7 +26,7 @@ def apply_rolling_on_full_dataframe(win_size, step_size):
 
 def leave_one_patient_out(test_patient):
     full_dataset = pd.read_csv('processed_data/full_rolled_dataset_w400_s40.csv', sep=',')
-    test_df = full_dataset[(full_dataset['patient'] == test_patient) & (full_dataset['trials'] == 'trial_1')]
+    test_df = full_dataset[full_dataset['patient'] == test_patient]
     train_df = pd.concat([full_dataset, test_df, test_df]).drop_duplicates(keep=False)
     return train_df, test_df
 
