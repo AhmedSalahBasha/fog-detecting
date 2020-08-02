@@ -1,17 +1,18 @@
-import preprocessing
-import modelling
 import pandas as pd
 import numpy as np
 import datetime
-import features_selection as fs
+from preprocessing import preprocessing
+from modelling import modelling
+import preprocessing.features_selection as fs
+from plots import plotting
 from imblearn.over_sampling import SMOTE, ADASYN
 from collections import Counter
-from plotting import plot_loss_metric, plot_loss_accuracy, plot_metrics, plot_cm
+
 
 
 # PRE-PROCESSING:: ATTENTION OF ACTIVATING THE FOLLOWING LINE - IT TAKES AROUND 12 HOURS
 WIN_SIZE, STEP_SIZE = 400, 40
-# full_rolled_df = preprocessing.apply_rolling_on_full_dataframe(win_size=WIN_SIZE, step_size=STEP_SIZE)
+full_rolled_df = preprocessing.apply_rolling_on_full_dataframe(win_size=WIN_SIZE, step_size=STEP_SIZE)
 
 patients = ['G04', 'G05', 'G06', 'G07', 'G08', 'G09', 'G11',
             'P231', 'P351', 'P379', 'P551', 'P623', 'P645', 'P812', 'P876', 'P940']
@@ -27,12 +28,12 @@ results_df['test_label_count'] = results_df['test_label_count'].astype(object)
 idx = 0
 for p in range(len(patients)):
     PATIENT = patients[p]
-    train_set, test_set = preprocessing.leave_one_patient_out(test_patient=patients[p])
+    train_set, test_set = preprocessing.leave_one_patient_out(full_rolled_df, test_patient=PATIENT)
 
     # Feature Selection :: #group --> (stat, spec, temp, freq, all, list_of_features_names)   #pos --> (feet, lower)   #sensor --> (acc, gyro, both)
     SENSOR_POS = 'feet'
     SENSOR_TYPE = 'acc'
-    FEATURES = ['avg', 'std', 'max', 'min', 'var', 'fi', 'pi', 'fp', 'lp']
+    FEATURES = ['avg', 'std', 'med', 'max', 'min', 'var', 'rms', 'fi', 'pi', 'fp', 'lp']
     train_set = fs.sensors_features(train_set, pos=SENSOR_POS, group=FEATURES, sensor=SENSOR_TYPE)
     test_set = fs.sensors_features(test_set, pos=SENSOR_POS, group=FEATURES, sensor=SENSOR_TYPE)
 
@@ -150,8 +151,8 @@ for p in range(len(patients)):
             model.fit(X_train, y_train, X_test, y_test, epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=2)
             model.evaluate(X_test, y_test, batch_size=BATCH_SIZE)
             y_pred = model.predict(X_test)
-            plot_metrics(history=model.history, model_name=model.model_name)
-            plot_cm(true_labels=y_test, predictions=y_pred, model_name=model.model_name)
+            plotting.plot_metrics(history=model.history, model_name=model.model_name)
+            plotting.plot_cm(true_labels=y_test, predictions=y_pred, model_name=model.model_name)
         elif m == 'LSTM':
             TIME_STEPS = 3
             STEP = 1
@@ -170,25 +171,15 @@ for p in range(len(patients)):
             model.fit(X_train, y_train, X_test, y_test, epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=2)
             model.evaluate(X_test, y_test, batch_size=BATCH_SIZE)
             y_pred = model.predict(X_test)
-            plot_metrics(history=model.history, model_name=model.model_name)
-            plot_cm(true_labels=y_test.argmax(axis=1), predictions=y_pred.argmax(axis=1), model_name=model.model_name)
+            plotting.plot_metrics(history=model.history, model_name=model.model_name)
+            plotting.plot_cm(true_labels=y_test.argmax(axis=1), predictions=y_pred.argmax(axis=1), model_name=model.model_name)
         ENDED_AT = datetime.datetime.now()
         print("======== Model end:  " + str(ENDED_AT) + " ============")
         results_df.at[idx, 'ended_at'] = ENDED_AT
         results_df.at[idx, 'duration'] = str(ENDED_AT - STARTED_AT)
         idx += 1
 
-results_df.to_csv('processed_data/results_ml_all_trials.csv', sep=',')
-
-
-
-
-
-
-
-
-
-
+results_df.to_csv('results/results_ml_outliers_removed.csv', sep=',')
 
 
 
