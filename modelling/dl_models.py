@@ -24,18 +24,14 @@ class DL_Parent_Model:
 
     def evaluate(self, X, y, batch_size):
         results = self.model.evaluate(X, y, batch_size=batch_size, verbose=0)
-        for name, value in zip(self.model.metrics_names, results):
-            print(name, ': ', value)
-        print()
+        metrics_results = dict(zip(self.model.metrics_names, results))
+        print(metrics_results)
+        return metrics_results
 
     def predict(self, X_test):
         self.y_pred = self.model.predict(X_test)
         return self.y_pred
 
-    def conf_matrix(self, y_test):
-        y_test = (y_test > 0.5)
-        self.cm = metrics.confusion_matrix(y_test, self.y_pred, labels=[0, 1])
-        return self.cm
 
 
 class ANN_Model(DL_Parent_Model):
@@ -61,7 +57,7 @@ class ANN_Model(DL_Parent_Model):
             clf.add(Dropout(rate=self.dropout_rate))
         clf.add(Dense(units=1, init='uniform', activation=self.output_layer_actv))
         clf.compile(optimizer=self.optimizer, loss='binary_crossentropy', metrics=[self.metric])
-        print(clf.summary())
+        #print(clf.summary())
         return clf
 
     def features_scaling(self, X_train, X_test, min_max:bool=False):
@@ -72,6 +68,12 @@ class ANN_Model(DL_Parent_Model):
         scaled_X_train = scaler.fit_transform(X_train)
         scaled_X_test = scaler.transform(X_test)
         return scaled_X_train, scaled_X_test
+
+
+    def conf_matrix(self, y_test):
+        y_test = (y_test > 0.5)
+        self.cm = metrics.confusion_matrix(y_test, self.y_pred > 0.5, labels=[0, 1])
+        return self.cm
 
 
 class LSTM_Model(DL_Parent_Model):
@@ -102,7 +104,7 @@ class LSTM_Model(DL_Parent_Model):
         clf.add(Dropout(rate=self.dropout_rate))
         clf.add(Dense(units=2, activation=self.output_layer_actv))
         clf.compile(loss='binary_crossentropy', optimizer=self.optimizer, metrics=[self.metric])
-        print(clf.summary())
+        #print(clf.summary())
         return clf
 
     def features_scaling(self, X_train, X_test, min_max:bool=False):
@@ -118,5 +120,9 @@ class LSTM_Model(DL_Parent_Model):
         y_train = to_categorical(y_train, num_classes=2)
         y_test = to_categorical(y_test, num_classes=2)
         return y_train, y_test
+
+    def conf_matrix(self, y_test):
+        self.cm = metrics.confusion_matrix(y_test.argmax(axis=1), self.y_pred.argmax(axis=1), labels=[0, 1])
+        return self.cm
 
 

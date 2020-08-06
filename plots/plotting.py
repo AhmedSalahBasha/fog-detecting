@@ -70,7 +70,7 @@ def plot_conf_matrix(y_test, y_pred, pic_name, norm=True):
 def plot_metrics(history, model_name):
     mpl.rcParams['figure.figsize'] = (12, 10)
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    metrics =  ['loss', 'auc', 'precision', 'recall']
+    metrics =  ['loss', 'auc_score', 'precision', 'recall']
     for n, metric in enumerate(metrics):
         name = metric.replace("_"," ").capitalize()
         plt.subplot(2,2,n+1)
@@ -81,25 +81,24 @@ def plot_metrics(history, model_name):
         plt.ylabel(name)
         if metric == 'loss':
             plt.ylim([0, plt.ylim()[1]])
-        elif metric == 'auc':
+        elif metric == 'auc_score':
             plt.ylim([0.8,1])
         else:
             plt.ylim([0,1])
         plt.legend()
+    plt.suptitle('Results Metrics - ' + model_name)
     plt.savefig('plots/metrics_' + model_name + '.png')
+    plt.show()
 
 
-def plot_cm(true_labels, predictions, model_name, p=0.5):
-    if model_name == 'LSTM':
-        cm = confusion_matrix(true_labels, predictions)
-    else:
-        cm = confusion_matrix(true_labels, predictions > p)
-    plt.figure(figsize=(5, 5))
+def plot_cm(cm, model_name):
+    fig = plt.figure(figsize=(5, 5))
     sns.heatmap(cm, annot=True, fmt="d")
-    plt.title('Confusion matrix @{:.2f}'.format(p))
+    #plt.title('Confusion Matrix - ', model_name)
     plt.ylabel('Actual label')
     plt.xlabel('Predicted label')
     plt.savefig('plots/cm_' + model_name + '.png')
+    plt.show()
 
 
 def plot_loss_accuracy(history, pic_name):

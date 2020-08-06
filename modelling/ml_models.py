@@ -38,6 +38,16 @@ class ML_Parent_Model:
         print('AUC Score: ', auc)
         return auc
 
+    def precision(self, y_test):
+        precision = metrics.precision_score(y_test, self.y_pred)
+        print('Percision Score: ', precision)
+        return precision
+
+    def recall(self, y_test):
+        recall = metrics.recall_score(y_test, self.y_pred)
+        print('Recall Score: ', recall)
+        return recall
+
     def clf_report(self, y_test):
         y_pred = (self.y_pred > 0.5)
         # y_pred = np.argmax(y_pred, axis=1)

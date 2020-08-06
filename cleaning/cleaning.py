@@ -8,7 +8,6 @@ def split_full_dataset():
     patients = ['G04', 'G05', 'G06', 'G07', 'G08', 'G09', 'G11',
                 'P231', 'P351', 'P379', 'P551', 'P623', 'P645', 'P812', 'P876', 'P940']
     os.makedirs('data/splitted_full_dataset/')
-
     for p in patients:
         if not os.path.exists('splitted_full_dataset/'+p):
             os.makedirs('splitted_full_dataset/'+p)

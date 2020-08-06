@@ -17,9 +17,13 @@ def apply_rolling_on_full_dataframe(win_size, step_size):
         for t in trials:
             print('========= Started with Trial: ' + str(t) + '============')
             t_df = p_df[p_df['trials'] == t]
+            '''
             # Removing outliers
-            cleaned_df = removing_outliers(patient_df=t_df, lower_quantile=0.03, upper_quantile=0.97)
-            rolled_df = rw.rolling_window(cleaned_df, win_size, step_size)
+            print("Dataframe shape BEFORE removing Outliers: ", t_df.shape)
+            cleaned_df = removing_outliers(patient_df=t_df, lower_quantile=0.04, upper_quantile=0.96)
+            print("Dataframe shape AFTER removing Outliers: ", cleaned_df.shape)
+            '''
+            rolled_df = rw.rolling_window(t_df, win_size, step_size)
             rolled_dfs.append(rolled_df)
     full_rolled_df = pd.concat(rolled_dfs, ignore_index=True)
     full_rolled_df.to_csv('data/processed_data/full_rolled_dataset_w400_s40_outliers_removed.csv', sep=',', index=False)
