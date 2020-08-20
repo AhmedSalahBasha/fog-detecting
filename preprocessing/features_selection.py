@@ -15,7 +15,7 @@ def sensors_features(df, pos, group, sensor):
     lowerleg_cols = list(filter(re_lower.match, all_cols))
     feet_cols = [x for x in all_cols if x not in lowerleg_cols]
     feet_cols.remove('Label')
-    if pos == 'lower':
+    if pos == 'shank':
         lowerleg_df = df.drop(feet_cols, axis=1)
         if sensor == 'acc':
             re_gyro = re.compile("^Gyro_*")
@@ -84,24 +84,13 @@ def _get_features_group(df, group):
         stat_cols.append('Label')
         df = df[stat_cols]
         return df
-    elif group == 'spec':
-        spec_regex = re.compile(".*_hum_eng|.*_spec_entropy|.*_max_freq|.*_pow_band|.*_max_pow_spec|.*_spec_dist")
-        spec_cols = list(filter(spec_regex.match, all_cols))
-        spec_cols.append('Label')
-        df = df[spec_cols]
-        return df
-    elif group == 'temp':
-        temp_regex = re.compile(".*_total_eng|.*_slope|.*_max_peaks|.*_abs_eng|.*_dist")
-        temp_cols = list(filter(temp_regex.match, all_cols))
-        temp_cols.append('Label')
-        df = df[temp_cols]
-        return df
     elif group == 'freq':
         temp_regex = re.compile(".*_fi|.*_pi|.*_fp|.*_lp")
         temp_cols = list(filter(temp_regex.match, all_cols))
         temp_cols.append('Label')
         df = df[temp_cols]
         return df
+
 
 def _get_features_custom_group(df, group_list):
     all_cols = df.columns

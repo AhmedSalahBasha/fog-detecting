@@ -40,7 +40,7 @@ def rolling_window(df, win_size, step_size):
             #input_df[col + '_iqr'] = input_df[col].rolling(win_size).apply(_get_iqr)[step_size - 1::step_size]     # interquartile
             #input_df[col + '_iqr_rng'] = input_df[col].rolling(win_size).apply(tsfel.interq_range)[step_size - 1::step_size]  # interquartile range
             input_df[col + '_var'] = input_df[col].rolling(win_size).apply(tsfel.calc_var)[step_size - 1::step_size]  # variance
-            # =============== FREQUENCY DOMAIN FEATURES ===================
+            # =============== FREQUENCY (SPECTRAL) DOMAIN FEATURES ===================
             input_df[col + '_fi'] = input_df[col].rolling(win_size).apply(_freeze_index,
                                                                           args=(fs, [3, 8], [0.5, 3], win_sec,))[step_size - 1::step_size]    # Freezing Index
             input_df[col + '_pi'] = input_df[col].rolling(win_size).apply(_power_index,
@@ -49,19 +49,18 @@ def rolling_window(df, win_size, step_size):
                                                                           args=(fs, [3, 8], win_sec,))[step_size - 1::step_size]  # Freezing Band Power
             input_df[col + '_lp'] = input_df[col].rolling(win_size).apply(_locomotor_band_power,
                                                                          args=(fs, [0.5, 3], win_sec,))[step_size - 1::step_size]  # Locomotor Band Power
-            # =============== SPECTRAL FEATURES =====================
+            '''
             input_df[col + '_spec_dist'] = input_df[col].rolling(win_size).apply(_get_spectral_distance,
                                                                                args=(fs,))[step_size - 1::step_size]  # spectral distance
             input_df[col + '_hum_eng'] = input_df[col].rolling(win_size).apply(_get_human_range_energy,
                                                                                args=(fs,))[step_size - 1::step_size]  # human range energy
-            input_df[col + '_spec_entropy'] = input_df[col].rolling(win_size).apply(_get_spectral_entropy,
-                                                                                    args=(fs,))[step_size - 1::step_size]  # total energy
             input_df[col + '_max_pow_spec'] = input_df[col].rolling(win_size).apply(_get_max_power_spectrum,
                                                                                     args=(fs,))[step_size - 1::step_size]  # max power spectrum
             input_df[col + '_max_freq'] = input_df[col].rolling(win_size).apply(_get_max_frequency,
                                                                                 args=(fs,))[step_size - 1::step_size]     # max frequency
-            input_df[col + '_pow_band'] = input_df[col].rolling(win_size).apply(_get_power_bandwidth,
-                                                                              args=(fs,))[step_size - 1::step_size]  # power bandwidth
+            input_df[col + '_spec_entropy'] = input_df[col].rolling(win_size).apply(_get_spectral_entropy, args=(fs,))[step_size - 1::step_size]  # total energy
+            input_df[col + '_pow_band'] = input_df[col].rolling(win_size).apply(_get_power_bandwidth, args=(fs,))[step_size - 1::step_size]  # power bandwidth
+            '''
             '''
             # =============== TEMPORAL FEATURES ======================
             input_df[col + '_slope'] = input_df[col].rolling(win_size).apply(tsfel.slope)[step_size - 1::step_size]  # slope

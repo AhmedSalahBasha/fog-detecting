@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 import datetime
+
+from imblearn.over_sampling import SMOTE
+from collections import Counter
 from preprocessing import preprocessing
 from modelling import modelling
 import preprocessing.features_selection as fs
@@ -8,17 +11,17 @@ from plots import plotting
 from keras.backend import clear_session
 
 
-# PRE-PROCESSING:: ATTENTION OF ACTIVATING THE FOLLOWING LINE - IT TAKES AROUND 12 HOURS
+# PRE-PROCESSING:: ATTENTION OF ACTIVATING THE FOLLOWING LINE - IT TAKES AROUND 48 HOURS
 WIN_SIZE, STEP_SIZE = 400, 40
 #full_rolled_df = preprocessing.apply_rolling_on_full_dataframe(win_size=WIN_SIZE, step_size=STEP_SIZE)
 full_rolled_df = pd.read_csv('data/processed_data/full_rolled_dataset_w400_s40.csv')
+
 patients = ['G04', 'G05', 'G06', 'G07', 'G08', 'G09', 'G11',
             'P231', 'P351', 'P379', 'P551', 'P623', 'P645', 'P812', 'P876', 'P940']
 
 cols = ['test_patient', 'train_shape', 'test_shape', 'train_lable_count', 'test_label_count',
-        'sensor_pos', 'sensor_type', 'features',
-        'model_name', 'started_at', 'ended_at', 'duration', 'accuracy', 'f1_score', 'precision', 'recall', 'auc_score',
-        'conf_matrix', 'loss']
+        'sensor_pos', 'sensor_type', 'features', 'model_name', 'started_at', 'ended_at', 'duration',
+        'accuracy', 'f1_score', 'precision', 'recall', 'auc_score', 'conf_matrix', 'clf_report', 'loss']
 results_df = pd.DataFrame(columns=cols)
 results_df['train_shape'] = results_df['train_shape'].astype(object)
 results_df['test_shape'] = results_df['test_shape'].astype(object)
@@ -37,16 +40,17 @@ for p in range(len(patients)):
     else:
         print("training set label count: \n", train_set['Label'].value_counts())
         print("testing set label count: \n", test_set['Label'].value_counts())
-        # Feature Selection :: #group --> (stat, spec, temp, freq, all, list_of_features_names)   #pos --> (feet, lower)   #sensor --> (acc, gyro, both)
+
         SENSOR_POS = 'feet'
         SENSOR_TYPE = 'acc'
-        #FEATURES = ['avg', 'std', 'med', 'max', 'min', 'var', 'rms', 'fi', 'pi', 'fp', 'lp']
-        FEATURES = 'spec'
-        train_set = fs.sensors_features(train_set, pos=SENSOR_POS, group=FEATURES, sensor=SENSOR_TYPE)
-        test_set = fs.sensors_features(test_set, pos=SENSOR_POS, group=FEATURES, sensor=SENSOR_TYPE)
+        #FEATURES_GROUP = ['avg', 'std', 'med', 'max', 'min', 'var', 'rms', 'fi', 'pi', 'fp', 'lp']
+        FEATURES_GROUP = 'freq'
+        # Feature Selection :: #group --> (stat, freq, all, list_of_features_names)   #pos --> (feet, shank)   #sensor --> (acc, gyro, both)
+        train_set = fs.sensors_features(train_set, pos=SENSOR_POS, group=FEATURES_GROUP, sensor=SENSOR_TYPE)
+        test_set = fs.sensors_features(test_set, pos=SENSOR_POS, group=FEATURES_GROUP, sensor=SENSOR_TYPE)
 
         # Modelling
-        models = ['LSTM', 'ANN']
+        models = ['SVM', 'RF', 'DT', 'GNB', 'KNN', 'KNN_DTW']
         for m in models:
             clear_session() # for clearing the Model cache to avoid consuming memory over time
             STARTED_AT = datetime.datetime.now()
@@ -62,8 +66,7 @@ for p in range(len(patients)):
             results_df.at[idx, 'test_label_count'] = test_set['Label'].value_counts().to_dict()
             results_df.at[idx, 'sensor_pos'] = SENSOR_POS
             results_df.at[idx, 'sensor_type'] = SENSOR_TYPE
-            results_df.at[idx, 'features'] = FEATURES
-
+            results_df.at[idx, 'features'] = FEATURES_GROUP
             if m == 'SVM':
                 model = modelling.call_svm_model()
                 model.fit(X_train, y_train)
@@ -74,7 +77,6 @@ for p in range(len(patients)):
                 precision = model.precision(y_test)
                 recall = model.recall(y_test)
                 matrix = model.conf_matrix(y_test)
-                #report = model.clf_report(y_test)
                 results_df.at[idx, 'model_name'] = model.model_name
                 results_df.at[idx, 'started_at'] = STARTED_AT
                 results_df.at[idx, 'accuracy'] = accuracy
@@ -83,7 +85,7 @@ for p in range(len(patients)):
                 results_df.at[idx, 'precision'] = precision
                 results_df.at[idx, 'recall'] = recall
                 results_df.at[idx, 'conf_matrix'] = matrix
-                #results_df.at[idx, 'clf_report'] = report
+                results_df.at[idx, 'clf_report'] = model.clf_report(y_test)
             elif m == 'RF':
                 model = modelling.call_rf_model()
                 model.fit(X_train, y_train)
@@ -94,7 +96,6 @@ for p in range(len(patients)):
                 precision = model.precision(y_test)
                 recall = model.recall(y_test)
                 matrix = model.conf_matrix(y_test)
-                #report = model.clf_report(y_test)
                 results_df.at[idx, 'model_name'] = model.model_name
                 results_df.at[idx, 'started_at'] = STARTED_AT
                 results_df.at[idx, 'accuracy'] = accuracy
@@ -103,7 +104,26 @@ for p in range(len(patients)):
                 results_df.at[idx, 'precision'] = precision
                 results_df.at[idx, 'recall'] = recall
                 results_df.at[idx, 'conf_matrix'] = matrix
-                #results_df.at[idx, 'clf_report'] = report
+                results_df.at[idx, 'clf_report'] = model.clf_report(y_test)
+            elif m == 'DT':
+                model = modelling.call_dt_model()
+                model.fit(X_train, y_train)
+                model.predict(X_test)
+                accuracy = model.accuracy(y_test)
+                f1_score = model.f1_score(y_test)
+                auc_score = model.auc_score(y_test)
+                precision = model.precision(y_test)
+                recall = model.recall(y_test)
+                matrix = model.conf_matrix(y_test)
+                results_df.at[idx, 'model_name'] = model.model_name
+                results_df.at[idx, 'started_at'] = STARTED_AT
+                results_df.at[idx, 'accuracy'] = accuracy
+                results_df.at[idx, 'f1_score'] = f1_score
+                results_df.at[idx, 'auc_score'] = auc_score
+                results_df.at[idx, 'precision'] = precision
+                results_df.at[idx, 'recall'] = recall
+                results_df.at[idx, 'conf_matrix'] = matrix
+                results_df.at[idx, 'clf_report'] = model.clf_report(y_test)
             elif m == 'GNB':
                 model = modelling.call_gnb_model()
                 model.fit(X_train, y_train)
@@ -114,7 +134,6 @@ for p in range(len(patients)):
                 precision = model.precision(y_test)
                 recall = model.recall(y_test)
                 matrix = model.conf_matrix(y_test)
-                #report = model.clf_report(y_test)
                 results_df.at[idx, 'model_name'] = model.model_name
                 results_df.at[idx, 'started_at'] = STARTED_AT
                 results_df.at[idx, 'accuracy'] = accuracy
@@ -123,7 +142,7 @@ for p in range(len(patients)):
                 results_df.at[idx, 'precision'] = precision
                 results_df.at[idx, 'recall'] = recall
                 results_df.at[idx, 'conf_matrix'] = matrix
-                #results_df.at[idx, 'clf_report'] = report
+                results_df.at[idx, 'clf_report'] = model.clf_report(y_test)
             elif m == 'KNN':
                 model = modelling.call_knn_model()
                 model.fit(X_train, y_train)
@@ -134,7 +153,6 @@ for p in range(len(patients)):
                 precision = model.precision(y_test)
                 recall = model.recall(y_test)
                 matrix = model.conf_matrix(y_test)
-                #report = model.clf_report(y_test)
                 results_df.at[idx, 'model_name'] = model.model_name
                 results_df.at[idx, 'started_at'] = STARTED_AT
                 results_df.at[idx, 'accuracy'] = accuracy
@@ -143,7 +161,7 @@ for p in range(len(patients)):
                 results_df.at[idx, 'precision'] = precision
                 results_df.at[idx, 'recall'] = recall
                 results_df.at[idx, 'conf_matrix'] = matrix
-                #results_df.at[idx, 'clf_report'] = report
+                results_df.at[idx, 'clf_report'] = model.clf_report(y_test)
             elif m == 'KNN_DTW':
                 model = modelling.call_knn_dtw_model()
                 model.fit(X_train, y_train)
@@ -154,7 +172,6 @@ for p in range(len(patients)):
                 precision = model.precision(y_test)
                 recall = model.recall(y_test)
                 matrix = model.conf_matrix(y_test)
-                #report = model.clf_report(y_test)
                 results_df.at[idx, 'model_name'] = model.model_name
                 results_df.at[idx, 'started_at'] = STARTED_AT
                 results_df.at[idx, 'accuracy'] = accuracy
@@ -163,7 +180,7 @@ for p in range(len(patients)):
                 results_df.at[idx, 'precision'] = precision
                 results_df.at[idx, 'recall'] = recall
                 results_df.at[idx, 'conf_matrix'] = matrix
-                #results_df.at[idx, 'clf_report'] = report
+                results_df.at[idx, 'clf_report'] = model.clf_report(y_test)
             elif m == 'ANN':
                 input_dim = X_train.shape[1]
                 NUM_HIDDEN_LAYERS = 5
@@ -175,11 +192,14 @@ for p in range(len(patients)):
                 results = model.evaluate(X_test, y_test, batch_size=BATCH_SIZE)
                 y_pred = model.predict(X_test)
                 cm = model.conf_matrix(y_test)
-                plotting.plot_metrics(history=model.history, model_name=model.model_name)
-                plotting.plot_cm(cm, model_name=model.model_name)
+                plotting.plot_metrics(history=model.history, model_name=model.model_name+'_'+PATIENT)
+                plotting.plot_cm(cm, model_name=model.model_name+'_'+PATIENT)
                 results_df.at[idx, 'model_name'] = model.model_name
                 results_df.at[idx, 'started_at'] = STARTED_AT
                 results_df.at[idx, 'conf_matrix'] = cm
+                precision = results.get('precision')
+                recall = results.get('recall')
+                results_df.at[idx, 'f1_score'] = (2 * precision * recall) / (precision + recall)
                 for key, value in results.items():
                     results_df.at[idx, key] = value
             elif m == 'LSTM':
@@ -206,6 +226,9 @@ for p in range(len(patients)):
                 results_df.at[idx, 'model_name'] = model.model_name
                 results_df.at[idx, 'started_at'] = STARTED_AT
                 results_df.at[idx, 'conf_matrix'] = cm
+                precision = results.get('precision')
+                recall = results.get('recall')
+                results_df.at[idx, 'f1_score'] = (2 * precision * recall) / (precision + recall)
                 for key, value in results.items():
                     results_df.at[idx, key] = value
             ENDED_AT = datetime.datetime.now()
@@ -214,10 +237,7 @@ for p in range(len(patients)):
             results_df.at[idx, 'duration'] = str(ENDED_AT - STARTED_AT)
             idx += 1
 
-results_df.to_csv('results/results_dl_acc_feet_spec_skipped.csv', sep=',', index=False)
-
-
-
+results_df.to_csv('results/results_ml_acc_feet_spec_weighted.csv', sep=',', index=False)
 
 
 
