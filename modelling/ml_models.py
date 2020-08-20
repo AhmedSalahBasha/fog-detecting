@@ -14,7 +14,7 @@ class ML_Parent_Model:
         self.model = model
 
     def fit(self, X, y):
-        self.model.fit(X, y)
+        self.model.fit(X=X, y=y)
 
     def predict(self, X_test):
         self.y_pred = self.model.predict(X_test)
@@ -56,7 +56,6 @@ class ML_Parent_Model:
             report = metrics.classification_report(y_test, y_pred, output_dict=True)
         except ValueError:
             pass
-        print('Classification Report: \n', report)
         return report
 
     def conf_matrix(self, y_test):
@@ -81,7 +80,7 @@ class GNB_Model(ML_Parent_Model):
 
 
 class SVM_Model(ML_Parent_Model):
-    def __init__(self, gamma, C, kernel, probability=True):
+    def __init__(self, gamma, C, kernel, probability=True, class_weight=None):
         self.model_name = 'SupportVectorsMachine'
         self.gamma = gamma
         self.C = C
@@ -91,17 +90,17 @@ class SVM_Model(ML_Parent_Model):
 
 
 class RF_Model(ML_Parent_Model):
-    def __init__(self, n_estimators, max_depth, criterion, min_samples_split):
+    def __init__(self, n_estimators, max_depth, criterion, min_samples_split, class_weight=None):
         self.model_name = 'RandomForest'
         self.n_estimators = n_estimators
         self.max_depth = max_depth
         self.criterion = criterion
         self.min_samples_split = min_samples_split
         self.model = RandomForestClassifier(n_estimators=n_estimators,
-                                 max_depth=max_depth,
-                                 random_state=0,
-                                 criterion=criterion,
-                                 min_samples_split=min_samples_split)
+                                            max_depth=max_depth,
+                                            random_state=0,
+                                            criterion=criterion,
+                                            min_samples_split=min_samples_split)
         ML_Parent_Model.__init__(self, model=self.model)
 
     def features_importances(self, index):
