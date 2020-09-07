@@ -25,26 +25,28 @@ class ML_Parent_Model:
         return acc
 
     def f1_score(self, y_test):
-        f1 = metrics.f1_score(y_test, self.y_pred)
+        f1 = metrics.f1_score(y_test, self.y_pred, average='weighted')
         print('F1 Score: ', f1)
         return f1
 
     def auc_score(self, y_test):
         auc = 0
         try:
-            auc = metrics.roc_auc_score(y_test, self.y_pred)
+            fpr, tpr, thresholds = metrics.roc_curve(y_test, self.y_pred)
+            auc = metrics.auc(fpr, tpr)
         except ValueError:
+            print('????? AUC ERROR ?????')
             pass
         print('AUC Score: ', auc)
         return auc
 
     def precision(self, y_test):
-        precision = metrics.precision_score(y_test, self.y_pred)
+        precision = metrics.precision_score(y_test, self.y_pred, average='weighted')
         print('Percision Score: ', precision)
         return precision
 
     def recall(self, y_test):
-        recall = metrics.recall_score(y_test, self.y_pred)
+        recall = metrics.recall_score(y_test, self.y_pred, average='weighted')
         print('Recall Score: ', recall)
         return recall
 
@@ -80,7 +82,7 @@ class GNB_Model(ML_Parent_Model):
 
 
 class SVM_Model(ML_Parent_Model):
-    def __init__(self, gamma, C, kernel, probability=True, class_weight=None):
+    def __init__(self, gamma, C, kernel, probability=True):
         self.model_name = 'SupportVectorsMachine'
         self.gamma = gamma
         self.C = C
@@ -90,7 +92,7 @@ class SVM_Model(ML_Parent_Model):
 
 
 class RF_Model(ML_Parent_Model):
-    def __init__(self, n_estimators, max_depth, criterion, min_samples_split, class_weight=None):
+    def __init__(self, n_estimators, max_depth, criterion, min_samples_split):
         self.model_name = 'RandomForest'
         self.n_estimators = n_estimators
         self.max_depth = max_depth

@@ -57,7 +57,6 @@ class ANN_Model(DL_Parent_Model):
             clf.add(Dropout(rate=self.dropout_rate))
         clf.add(Dense(units=1, init='uniform', activation=self.output_layer_actv))
         clf.compile(optimizer=self.optimizer, loss='binary_crossentropy', metrics=[self.metric])
-        #print(clf.summary())
         return clf
 
     def features_scaling(self, X_train, X_test, min_max:bool=False):
@@ -104,7 +103,6 @@ class LSTM_Model(DL_Parent_Model):
         clf.add(Dropout(rate=self.dropout_rate))
         clf.add(Dense(units=2, activation=self.output_layer_actv))
         clf.compile(loss='binary_crossentropy', optimizer=self.optimizer, metrics=[self.metric])
-        #print(clf.summary())
         return clf
 
     def features_scaling(self, X_train, X_test, min_max:bool=False):
