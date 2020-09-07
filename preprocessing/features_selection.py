@@ -74,6 +74,35 @@ def sensors_features(df, pos, group, sensor):
                 else:
                     feet_df = _get_features_group(feet_df, group)
             return feet_df
+    elif pos == 'all':
+        all_df = df.copy()
+        if sensor == 'acc':
+            re_gyro = re.compile("^Gyro_*")
+            gyro_cols = list(filter(re_gyro.match, list(all_df.columns)))
+            all_df = all_df.drop(gyro_cols, axis=1)
+            if group != 'all':
+                if type(group) is list:
+                    all_df = _get_features_custom_group(all_df, group)
+                else:
+                    all_df = _get_features_group(all_df, group)
+            return all_df
+        elif sensor == 'gyro':
+            re_acc = re.compile("^Acc_*")
+            acc_cols = list(filter(re_acc.match, list(all_df.columns)))
+            all_df = all_df.drop(acc_cols, axis=1)
+            if group != 'all':
+                if type(group) is list:
+                    all_df = _get_features_custom_group(all_df, group)
+                else:
+                    all_df = _get_features_group(all_df, group)
+            return all_df
+        elif sensor == 'both':
+            if group != 'all':
+                if type(group) is list:
+                    all_df = _get_features_custom_group(all_df, group)
+                else:
+                    all_df = _get_features_group(all_df, group)
+            return all_df
 
 
 def _get_features_group(df, group):

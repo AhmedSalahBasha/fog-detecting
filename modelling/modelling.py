@@ -2,6 +2,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from tensorflow import keras
 import sklearn.metrics as metrics
 from sklearn.model_selection import GridSearchCV
+from sklearn.utils import class_weight
 from keras.optimizers import SGD
 from keras.metrics import AUC
 from sklearn.ensemble import RandomForestClassifier
@@ -109,6 +110,16 @@ def get_train_test_sets(train_df, test_df):
     X_test = test_df.drop('Label', axis=1).values
     y_test = test_df['Label']
     return X_train, y_train, X_test, y_test
+
+
+def weight_classes(y_train):
+    if y_train is None:
+        return None
+    else:
+        class_weights = class_weight.compute_class_weight('balanced', np.unique(y_train), y_train)
+        class_weights = dict(enumerate(class_weights))
+        print("Class Weights: \n", class_weights)
+        return class_weights
 
 
 def grid_search_ann_model(X_train, y_train):
