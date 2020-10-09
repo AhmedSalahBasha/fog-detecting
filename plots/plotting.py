@@ -7,7 +7,7 @@ import itertools
 import os
 from sklearn.metrics import confusion_matrix
 
-import scikitplot as skplt
+#import scikitplot as skplt
 
 
 def plot_confusion_matrix(cm, target_names, normalize=True):
@@ -67,13 +67,13 @@ def plot_conf_matrix(y_test, y_pred, pic_name, norm=True):
     plt.savefig('plots/'+pic_name+'.png')
 
 
-def plot_metrics(history, model_name):
+def plot_metrics(history, image_name):
     mpl.rcParams['figure.figsize'] = (12, 10)
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    metrics =  ['loss', 'auc_score', 'precision', 'recall']
+    metrics = ['loss', 'f1_score', 'precision', 'recall']
     for n, metric in enumerate(metrics):
-        name = metric.replace("_"," ").capitalize()
-        plt.subplot(2,2,n+1)
+        name = metric.replace("_", " ").capitalize()
+        plt.subplot(2, 2, n+1)
         plt.plot(history.epoch,  history.history[metric], color=colors[0], label='Train')
         plt.plot(history.epoch, history.history['val_'+metric],
                  color=colors[1], linestyle="--", label='Validation')
@@ -86,8 +86,8 @@ def plot_metrics(history, model_name):
         else:
             plt.ylim([0,1])
         plt.legend()
-    plt.suptitle('Results Metrics - ' + model_name)
-    plt.savefig('plots/metrics_' + model_name + '.png')
+    plt.suptitle('Results Metrics - ' + image_name)
+    plt.savefig('metrics_' + image_name + '.png')
     plt.show()
 
 

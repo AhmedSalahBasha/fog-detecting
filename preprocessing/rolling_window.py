@@ -4,10 +4,6 @@ import numpy as np
 from scipy import stats
 import tsfel
 
-from tsfresh import extract_relevant_features, extract_features
-from tsfresh.feature_extraction import ComprehensiveFCParameters
-
-
 
 def rolling_window(df, win_size, step_size):
     """
@@ -300,6 +296,10 @@ def _bandpower(data, sf, band, window_sec, relative):
 
 
 # ---------------------- UN-USED FUNCTIONS ------------------------
+'''
+from tsfresh import extract_relevant_features, extract_features
+from tsfresh.feature_extraction import ComprehensiveFCParameters
+
 def _get_signal_power(col):
     """
 
@@ -354,3 +354,5 @@ def tsfel_extract_features(input_df):
 def tsfresh_generate_features_by_rolling(input_df, cols_names, win_size):
     output_features_df = input_df[cols_names].rolling(win_size).apply(tsfel_extract_features)
     return output_features_df
+'''
+

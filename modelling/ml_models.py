@@ -92,17 +92,15 @@ class SVM_Model(ML_Parent_Model):
 
 
 class RF_Model(ML_Parent_Model):
-    def __init__(self, n_estimators, max_depth, criterion, min_samples_split):
+    def __init__(self, n_estimators, max_depth, criterion):
         self.model_name = 'RandomForest'
         self.n_estimators = n_estimators
         self.max_depth = max_depth
         self.criterion = criterion
-        self.min_samples_split = min_samples_split
         self.model = RandomForestClassifier(n_estimators=n_estimators,
                                             max_depth=max_depth,
                                             random_state=0,
-                                            criterion=criterion,
-                                            min_samples_split=min_samples_split)
+                                            criterion=criterion)
         ML_Parent_Model.__init__(self, model=self.model)
 
     def features_importances(self, index):
@@ -137,15 +135,13 @@ class KNN_DTW_Model(ML_Parent_Model):
 
 
 class DT_Model(ML_Parent_Model):
-    def __init__(self, max_depth, criterion, min_samples_split):
+    def __init__(self, max_depth, criterion):
         self.model_name = 'DecisionTree'
         self.max_depth = max_depth
         self.criterion = criterion
-        self.min_samples_split = min_samples_split
         self.model = DecisionTreeClassifier(max_depth=max_depth,
                                             random_state=0,
-                                            criterion=criterion,
-                                            min_samples_split=min_samples_split)
+                                            criterion=criterion)
         ML_Parent_Model.__init__(self, model=self.model)
 
 

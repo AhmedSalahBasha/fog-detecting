@@ -1,79 +1,69 @@
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from tensorflow import keras
 import sklearn.metrics as metrics
 from sklearn.model_selection import GridSearchCV
 from sklearn.utils import class_weight
-from keras.optimizers import SGD
-from keras.metrics import AUC
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.tree import DecisionTreeClassifier
 from sklearn import svm
 import numpy as np
 from scipy import stats
 
-from dtaidistance import dtw
-
-import tensorflow as tf
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import Dropout
-from keras.layers import LSTM
-from keras.layers import Bidirectional
-from keras.optimizers import SGD
-from keras.wrappers.scikit_learn import KerasClassifier
-import keras_metrics as km
-from keras import backend as K
-from keras.metrics import Precision, Recall
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
+from tensorflow.keras import backend as K
 
 from modelling.ml_models import SVM_Model, RF_Model, DT_Model, KNN_Model, KNN_DTW_Model, GNB_Model
 from modelling.dl_models import ANN_Model, LSTM_Model
 
 
 METRICS = [
-        #keras.metrics.TruePositives(name='tp'),
-        #keras.metrics.FalsePositives(name='fp'),
-        #keras.metrics.TrueNegatives(name='tn'),
-        #keras.metrics.FalseNegatives(name='fn'),
         keras.metrics.BinaryAccuracy(name='accuracy'),
         keras.metrics.Precision(name='precision'),
-        keras.metrics.Recall(name='recall'),
-        keras.metrics.AUC(name='auc_score')
+        keras.metrics.Recall(name='recall')
+        #keras.metrics.AUC(name='auc_score')
     ]
+
 
 def call_svm_model():
     model = SVM_Model(gamma=0.001, C=50, kernel='sigmoid')
     return model
 
+
 def call_rf_model():
-    model = RF_Model(n_estimators=400, max_depth=20, criterion='entropy', min_samples_split=4)
+    model = RF_Model(n_estimators=10, max_depth=3, criterion='entropy')
     return model
 
+
 def call_dt_model():
-    model = DT_Model(max_depth=10, criterion='gini', min_samples_split=2)
+    model = DT_Model(max_depth=5, criterion='gini')
     return model
+
 
 def call_gnb_model():
     model = GNB_Model()
     return model
 
+
 def call_knn_model():
     model = KNN_Model(n_neighbors=1, weights='distance', metric='minkowski')
     return model
+
 
 def call_knn_dtw_model():
     model = KNN_DTW_Model(n_neighbors=1, weights='distance')
     return model
 
+
 def call_ann_model(input_dim, num_hidden_layers):
     model = ANN_Model(input_dim=input_dim,
                       num_hidden_layers=num_hidden_layers,
                       hidden_layer_actv='relu',
-                      output_layer_actv='sigmoid',
+                      output_layer_actv='softmax',
                       optimizer='adam',
                       dropout_rate=0.4,
-                      metric=METRICS)
+                      metric=METRICS+[f1_score])
     return model
+
 
 def call_lstm_model(input_dim, num_hidden_layers):
     model = LSTM_Model(input_dim=input_dim,
@@ -82,7 +72,7 @@ def call_lstm_model(input_dim, num_hidden_layers):
                        output_layer_actv='softmax',
                        optimizer='adam',
                        dropout_rate=0.4,
-                       metric=METRICS)
+                       metric=METRICS+[f1_score])
     return model
 
 
@@ -102,6 +92,7 @@ def create_3d_dataset(X, y, time_steps=1, step=1):
         Xs.append(v)
         ys.append(stats.mode(labels)[0][0])
     return np.array(Xs), np.array(ys).reshape(-1, 1)
+
 
 def get_train_test_sets(train_df, test_df):
     # Preparing Training set and Test set from different datasets
@@ -128,16 +119,16 @@ def grid_search_ann_model(X_train, y_train):
     def build_classifier(optimizer):
         clf = Sequential()
         output_dim = 210
-        clf.add(Dense(units=output_dim, init='uniform', activation='relu', input_dim=434))
+        clf.add(Dense(units=output_dim, activation='relu', input_dim=434))
         clf.add(Dropout(rate=0.3))
-        clf.add(Dense(units=output_dim, init='uniform', activation='relu'))
+        clf.add(Dense(units=output_dim, activation='relu'))
         clf.add(Dropout(rate=0.3))
-        clf.add(Dense(units=output_dim, init='uniform', activation='relu'))
+        clf.add(Dense(units=output_dim, activation='relu'))
         clf.add(Dropout(rate=0.3))
-        clf.add(Dense(units=output_dim, init='uniform', activation='relu'))
+        clf.add(Dense(units=output_dim,  activation='relu'))
         clf.add(Dropout(rate=0.3))
-        clf.add(Dense(units=1, init='uniform', activation='sigmoid'))
-        clf.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=[f1])
+        clf.add(Dense(units=1, activation='sigmoid'))
+        clf.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=[METRICS + [f1_score]])
         return clf
 
     classifier = KerasClassifier(build_fn=build_classifier)
@@ -157,11 +148,11 @@ def grid_search_ann_model(X_train, y_train):
 
 def grid_search_rf(classifier, X_train, y_train):
     grid_param = {
-        'n_estimators': [100, 200],
+        'n_estimators': [20, 50, 100, 200, 300],
         'criterion': ['gini', 'entropy'],
-        'max_depth': [5, 10],
-        'min_samples_split': [2, 6],
-        'min_samples_leaf': [1, 3, 5],
+        'max_depth': [3, 5, 7, 10],
+        'min_samples_split': [2, 4, 6],
+        'min_samples_leaf': [1, 2, 3, 5],
         'max_features': [None, "auto", "sqrt", "log2"]
     }
     gd_sr = GridSearchCV(estimator=classifier,
@@ -187,11 +178,11 @@ def grid_search_svm(X_train, y_train):
     """
     # Set the parameters by cross-validation
     tuned_parameters = [{'kernel': ['rbf', 'sigmoid', 'poly'],
-                         'gamma': [1e-2, 1e-3, 1e-4],
+                         'gamma': [0.0001, 0.001, 0.01, 0.1],
                          'C': [0.01, 0.1, 10, 100, 1000]
                          }
                         ]
-    classifier = svm.SVC(random_state=42)
+    classifier = svm.SVC()
     gd_sr = GridSearchCV(estimator=classifier,
                          param_grid=tuned_parameters,
                          scoring='accuracy',
@@ -202,7 +193,6 @@ def grid_search_svm(X_train, y_train):
     best_result = gd_sr.best_score_
     print("best_parameters: ", best_parameters)
     print("Best score: ", best_result)
-
 
 
 def get_roc_curve(clf, X_test, y_test):
@@ -244,8 +234,7 @@ def get_optimal_f1(clf, X_test, y_test):
     print("Best threshold %f || Best F1 Score %f" % (best_thr, best_f1))
 
 
-
-def f1(y_true, y_pred):
+def f1_score(y_true, y_pred):
     def recall(y_true, y_pred):
         """Recall metric.
 

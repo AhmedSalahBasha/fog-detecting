@@ -4,12 +4,11 @@ import sklearn.metrics as metrics
 from scipy import stats
 import numpy as np
 import tensorflow as tf
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import Dropout
-from keras.layers import LSTM
-from keras.utils import to_categorical
-
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import LSTM
+from tensorflow.keras.utils import to_categorical
 
 
 class DL_Parent_Model:
@@ -32,6 +31,25 @@ class DL_Parent_Model:
         self.y_pred = self.model.predict(X_test)
         return self.y_pred
 
+    def one_hot_labels(self, y_train, y_test):
+        y_train = to_categorical(y_train, num_classes=2)
+        y_test = to_categorical(y_test, num_classes=2)
+        return y_train, y_test
+
+    def conf_matrix(self, y_test):
+        self.cm = metrics.confusion_matrix(y_test.argmax(axis=1), self.y_pred.argmax(axis=1), labels=[0, 1])
+        print(self.cm)
+        return self.cm
+
+    def clf_report(self, y_test):
+        report = None
+        try:
+            report = metrics.classification_report(y_test.argmax(axis=1), self.y_pred.argmax(axis=1), output_dict=True)
+        except ValueError:
+            print('ERROR:: Classification Report Error ???')
+            pass
+        print('Classification Report: \n', report)
+        return report
 
 
 class ANN_Model(DL_Parent_Model):
@@ -50,12 +68,12 @@ class ANN_Model(DL_Parent_Model):
     def __initialize_ann_model(self):
         clf = Sequential()
         units = int(self.input_dim)
-        clf.add(Dense(units=units, init='uniform', activation=self.hidden_layer_actv, input_dim=self.input_dim))
+        clf.add(Dense(units=units, activation=self.hidden_layer_actv, input_dim=self.input_dim))
         clf.add(Dropout(rate=self.dropout_rate))
         for i in range(self.num_hidden_layers):
-            clf.add(Dense(units=units, init='uniform', activation=self.hidden_layer_actv))
+            clf.add(Dense(units=units, activation=self.hidden_layer_actv))
             clf.add(Dropout(rate=self.dropout_rate))
-        clf.add(Dense(units=1, init='uniform', activation=self.output_layer_actv))
+        clf.add(Dense(units=2, activation=self.output_layer_actv))
         clf.compile(optimizer=self.optimizer, loss='binary_crossentropy', metrics=[self.metric])
         return clf
 
@@ -67,12 +85,6 @@ class ANN_Model(DL_Parent_Model):
         scaled_X_train = scaler.fit_transform(X_train)
         scaled_X_test = scaler.transform(X_test)
         return scaled_X_train, scaled_X_test
-
-
-    def conf_matrix(self, y_test):
-        y_test = (y_test > 0.5)
-        self.cm = metrics.confusion_matrix(y_test, self.y_pred > 0.5, labels=[0, 1])
-        return self.cm
 
 
 class LSTM_Model(DL_Parent_Model):
@@ -87,7 +99,6 @@ class LSTM_Model(DL_Parent_Model):
         self.metric = metric
         self.model = self.__initialize_lstm_model()
         DL_Parent_Model.__init__(self, model=self.model)
-
 
     def __initialize_lstm_model(self):
         clf = Sequential()
@@ -113,14 +124,4 @@ class LSTM_Model(DL_Parent_Model):
         scaled_X_train = scaler.fit_transform(X_train.reshape(-1, X_train.shape[-1])).reshape(X_train.shape)
         scaled_X_test = scaler.transform(X_test.reshape(-1, X_test.shape[-1])).reshape(X_test.shape)
         return scaled_X_train, scaled_X_test
-
-    def one_hot_labels(self, y_train, y_test):
-        y_train = to_categorical(y_train, num_classes=2)
-        y_test = to_categorical(y_test, num_classes=2)
-        return y_train, y_test
-
-    def conf_matrix(self, y_test):
-        self.cm = metrics.confusion_matrix(y_test.argmax(axis=1), self.y_pred.argmax(axis=1), labels=[0, 1])
-        return self.cm
-
 
