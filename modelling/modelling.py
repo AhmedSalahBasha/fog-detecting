@@ -71,7 +71,7 @@ def call_lstm_model(input_dim, num_hidden_layers):
                        hidden_layer_actv='relu',
                        output_layer_actv='softmax',
                        optimizer='adam',
-                       dropout_rate=0.4,
+                       dropout_rate=0.6,
                        metric=METRICS+[f1_score])
     return model
 

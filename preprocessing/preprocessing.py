@@ -1,5 +1,6 @@
 from cleaning import cleaning
 from preprocessing import rolling_window as rw
+from preprocessing import features_selection as fs
 import re
 import numpy as np
 import pandas as pd
@@ -8,6 +9,12 @@ from sklearn.model_selection import train_test_split
 
 def apply_rolling_on_full_dataframe(win_size, step_size):
     full_dataset = pd.read_csv('data/processed_data/full_dataset.csv', sep=',')
+    # Feature Selection
+    SENSOR_TYPE = 'gyro'
+    SENSOR_POS = 'feet'
+    FEATURES_GROUP = 'all'
+    LEG = 'both'
+    full_dataset = fs.sensors_features(full_dataset, pos=SENSOR_POS, group=FEATURES_GROUP, sensor=SENSOR_TYPE, leg=LEG)
     patients = list(full_dataset['patient'].unique())
     rolled_dfs = []
     for p in patients:
@@ -26,7 +33,7 @@ def apply_rolling_on_full_dataframe(win_size, step_size):
             rolled_df = rw.rolling_window(t_df, win_size, step_size)
             rolled_dfs.append(rolled_df)
     full_rolled_df = pd.concat(rolled_dfs, ignore_index=True)
-    full_rolled_df.to_csv('data/processed_data/full_rolled_dataset_w400_s40_outliers_removed.csv', sep=',', index=False)
+    # full_rolled_df.to_csv('data/processed_data/full_rolled_dataset_w400_s40_outliers_removed.csv', sep=',', index=False)
     return full_rolled_df
 
 

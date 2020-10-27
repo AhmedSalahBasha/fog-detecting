@@ -9,6 +9,7 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.callbacks import EarlyStopping
 
 
 class DL_Parent_Model:
@@ -16,6 +17,7 @@ class DL_Parent_Model:
         self.model = model
 
     def fit(self, X_train, y_train, X_test, y_test, epochs, batch_size, verbose):
+        # callback = EarlyStopping(monitor='val_f1_score', patience=10)
         self.history = self.model.fit(X_train, y_train,
                                       validation_data=(X_test, y_test),
                                       epochs=epochs, batch_size=batch_size,
@@ -110,9 +112,9 @@ class LSTM_Model(DL_Parent_Model):
             clf.add(Dropout(rate=self.dropout_rate))
         clf.add(LSTM(units=int(units)))
         clf.add(Dropout(rate=self.dropout_rate))
-        clf.add(Dense(units=units, activation=self.hidden_layer_actv))
+        clf.add(Dense(units=units, activation=self.hidden_layer_actv, kernel_initializer='uniform'))
         clf.add(Dropout(rate=self.dropout_rate))
-        clf.add(Dense(units=2, activation=self.output_layer_actv))
+        clf.add(Dense(units=2, activation=self.output_layer_actv, kernel_initializer='uniform'))
         clf.compile(loss='binary_crossentropy', optimizer=self.optimizer, metrics=[self.metric])
         return clf
 
@@ -124,4 +126,9 @@ class LSTM_Model(DL_Parent_Model):
         scaled_X_train = scaler.fit_transform(X_train.reshape(-1, X_train.shape[-1])).reshape(X_train.shape)
         scaled_X_test = scaler.transform(X_test.reshape(-1, X_test.shape[-1])).reshape(X_test.shape)
         return scaled_X_train, scaled_X_test
+
+    def roc_auc(self, y_test):
+        fpr, tpr, thresholds = metrics.roc_curve(y_test.argmax(axis=1), self.y_pred.argmax(axis=1).ravel())
+        auc = metrics.auc(fpr, tpr)
+        return fpr, tpr, auc
 

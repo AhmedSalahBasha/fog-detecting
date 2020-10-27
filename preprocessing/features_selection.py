@@ -1,22 +1,31 @@
 import re
 
 
-def sensors_features(df, pos, group, sensor):
+def sensors_features(df, pos, group, sensor, leg):
     """
 
     :param df:
     :param pos:
     :param group:
     :param sensor:
+    :param leg:
     :return:
     """
     all_cols = df.columns
-    re_lower = re.compile(".*_lower*")
-    lowerleg_cols = list(filter(re_lower.match, all_cols))
+    lowerleg_cols = list(filter(re.compile(".*_lower*").match, all_cols))
     feet_cols = [x for x in all_cols if x not in lowerleg_cols]
     feet_cols.remove('Label')
     if pos == 'shank':
-        lowerleg_df = df.drop(feet_cols, axis=1)
+        if leg == 'left':
+            rightleg_cols = list(filter(re.compile(".*right*").match, lowerleg_cols))
+            lowerleg_df = df.drop(feet_cols, axis=1)
+            lowerleg_df = lowerleg_df.drop(rightleg_cols, axis=1)
+        elif leg == 'right':
+            leftleg_cols = list(filter(re.compile(".*left*").match, lowerleg_cols))
+            lowerleg_df = df.drop(feet_cols, axis=1)
+            lowerleg_df = lowerleg_df.drop(leftleg_cols, axis=1)
+        elif leg == 'both':
+            lowerleg_df = df.drop(feet_cols, axis=1)
         if sensor == 'acc':
             re_gyro = re.compile("^Gyro_*")
             gyro_cols = list(filter(re_gyro.match, list(lowerleg_df.columns)))
@@ -46,7 +55,16 @@ def sensors_features(df, pos, group, sensor):
                     lowerleg_df = _get_features_group(lowerleg_df, group)
             return lowerleg_df
     elif pos == 'feet':
-        feet_df = df.drop(lowerleg_cols, axis=1)
+        if leg == 'left':
+            rightleg_cols = list(filter(re.compile(".*right*").match, feet_cols))
+            feet_df = df.drop(lowerleg_cols, axis=1)
+            feet_df = feet_df.drop(rightleg_cols, axis=1)
+        elif leg == 'right':
+            leftleg_cols = list(filter(re.compile(".*left*").match, feet_cols))
+            feet_df = df.drop(lowerleg_cols, axis=1)
+            feet_df = feet_df.drop(leftleg_cols, axis=1)
+        elif leg == 'both':
+            feet_df = df.drop(lowerleg_cols, axis=1)
         if sensor == 'acc':
             re_gyro = re.compile("^Gyro_*")
             gyro_cols = list(filter(re_gyro.match, list(feet_df.columns)))
