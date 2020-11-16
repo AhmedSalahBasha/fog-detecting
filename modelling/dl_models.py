@@ -114,11 +114,11 @@ class LSTM_Model(DL_Parent_Model):
         clf.add(Dropout(rate=self.dropout_rate))
         clf.add(Dense(units=units, activation=self.hidden_layer_actv, kernel_initializer='uniform'))
         clf.add(Dropout(rate=self.dropout_rate))
-        clf.add(Dense(units=2, activation=self.output_layer_actv, kernel_initializer='uniform'))
+        clf.add(Dense(units=1, activation=self.output_layer_actv, kernel_initializer='uniform'))
         clf.compile(loss='binary_crossentropy', optimizer=self.optimizer, metrics=[self.metric])
         return clf
 
-    def features_scaling(self, X_train, X_test, min_max:bool=False):
+    def features_scaling_3d(self, X_train, X_test, min_max:bool=False):
         if min_max:
             scaler = MinMaxScaler()
         else:

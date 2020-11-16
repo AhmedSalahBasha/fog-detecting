@@ -7,7 +7,7 @@ import itertools
 import os
 from sklearn.metrics import confusion_matrix
 
-#import scikitplot as skplt
+# import scikitplot as skplt
 
 
 def plot_confusion_matrix(cm, target_names, normalize=True):
@@ -87,7 +87,7 @@ def plot_metrics(history, image_name):
             plt.ylim([0,1])
         plt.legend()
     plt.suptitle('Results Metrics - ' + image_name)
-    plt.savefig('metrics_' + image_name + '.png')
+    plt.savefig('plots/'+image_name + '.png')
     plt.show()
 
 

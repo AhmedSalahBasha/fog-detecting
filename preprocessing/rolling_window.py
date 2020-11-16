@@ -25,7 +25,6 @@ def rolling_window(df, win_size, step_size):
         elif col == 'trials':
             pass
         else:
-            print('### Started Column :  ' + col + ' At time:  ' + str(datetime.datetime.now()) + '######')
             # =============== STATISTICAL FEATURES ================
             '''
             input_df[col + '_avg'] = input_df[col].rolling(win_size).mean()[step_size - 1::step_size]     # mean
@@ -72,7 +71,6 @@ def rolling_window(df, win_size, step_size):
     input_df['patient'] = df.iloc[0]['patient']
     input_df['trials'] = df.iloc[0]['trials']
     input_df = input_df.dropna()
-    print('======== FINISHED DATAFRAME AT TIME:  ' + str(datetime.datetime.now()) + '==========')
     return input_df
 
 

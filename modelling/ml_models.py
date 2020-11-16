@@ -106,7 +106,7 @@ class RF_Model(ML_Parent_Model):
     def features_importances(self, index):
         importances_df = pd.DataFrame(self.model.feature_importances_,
                                       index=index,
-                                      columns=['importance']).sort_values('importance', ascending=False)
+                                      columns=['importance'])
         return importances_df
 
 
@@ -143,5 +143,4 @@ class DT_Model(ML_Parent_Model):
                                             random_state=0,
                                             criterion=criterion)
         ML_Parent_Model.__init__(self, model=self.model)
-
 

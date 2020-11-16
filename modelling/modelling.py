@@ -5,6 +5,7 @@ from sklearn.utils import class_weight
 from sklearn import svm
 import numpy as np
 from scipy import stats
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
@@ -14,14 +15,6 @@ from tensorflow.keras import backend as K
 
 from modelling.ml_models import SVM_Model, RF_Model, DT_Model, KNN_Model, KNN_DTW_Model, GNB_Model
 from modelling.dl_models import ANN_Model, LSTM_Model
-
-
-METRICS = [
-        keras.metrics.BinaryAccuracy(name='accuracy'),
-        keras.metrics.Precision(name='precision'),
-        keras.metrics.Recall(name='recall')
-        #keras.metrics.AUC(name='auc_score')
-    ]
 
 
 def call_svm_model():
@@ -60,8 +53,8 @@ def call_ann_model(input_dim, num_hidden_layers):
                       hidden_layer_actv='relu',
                       output_layer_actv='softmax',
                       optimizer='adam',
-                      dropout_rate=0.4,
-                      metric=METRICS+[f1_score])
+                      dropout_rate=0.6,
+                      metric=[precision, recall, f1_score])
     return model
 
 
@@ -69,10 +62,10 @@ def call_lstm_model(input_dim, num_hidden_layers):
     model = LSTM_Model(input_dim=input_dim,
                        num_hidden_layers=num_hidden_layers,
                        hidden_layer_actv='relu',
-                       output_layer_actv='softmax',
+                       output_layer_actv='sigmoid',
                        optimizer='adam',
                        dropout_rate=0.6,
-                       metric=METRICS+[f1_score])
+                       metric=['accuracy', precision, recall, f1_score])
     return model
 
 
@@ -92,6 +85,16 @@ def create_3d_dataset(X, y, time_steps=1, step=1):
         Xs.append(v)
         ys.append(stats.mode(labels)[0][0])
     return np.array(Xs), np.array(ys).reshape(-1, 1)
+
+
+def features_scaling(X_train, X_test, min_max:bool=False):
+    if min_max:
+        scaler = MinMaxScaler()
+    else:
+        scaler = StandardScaler()
+    scaled_X_train = scaler.fit_transform(X_train)
+    scaled_X_test = scaler.transform(X_test)
+    return scaled_X_train, scaled_X_test
 
 
 def get_train_test_sets(train_df, test_df):
@@ -128,7 +131,7 @@ def grid_search_ann_model(X_train, y_train):
         clf.add(Dense(units=output_dim,  activation='relu'))
         clf.add(Dropout(rate=0.3))
         clf.add(Dense(units=1, activation='sigmoid'))
-        clf.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=[METRICS + [f1_score]])
+        clf.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=[precision, recall, f1_score])
         return clf
 
     classifier = KerasClassifier(build_fn=build_classifier)
@@ -234,32 +237,43 @@ def get_optimal_f1(clf, X_test, y_test):
     print("Best threshold %f || Best F1 Score %f" % (best_thr, best_f1))
 
 
+# ===== Keras - Custom Metrics ======
+def check_units(y_true, y_pred):
+    if y_pred.shape[1] != 1:
+      y_pred = y_pred[:,1:2]
+      y_true = y_true[:,1:2]
+    return y_true, y_pred
+
+
+def precision(y_true, y_pred):
+    y_true, y_pred = check_units(y_true, y_pred)
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+    precision = true_positives / (predicted_positives + K.epsilon())
+    return precision
+
+
+def recall(y_true, y_pred):
+    y_true, y_pred = check_units(y_true, y_pred)
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    recall = true_positives / (possible_positives + K.epsilon())
+    return recall
+
+
 def f1_score(y_true, y_pred):
     def recall(y_true, y_pred):
-        """Recall metric.
-
-        Only computes a batch-wise average of recall.
-
-        Computes the recall, a metric for multi-label classification of
-        how many relevant items are selected.
-        """
         true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
         possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
         recall = true_positives / (possible_positives + K.epsilon())
         return recall
 
     def precision(y_true, y_pred):
-        """Precision metric.
-
-        Only computes a batch-wise average of precision.
-
-        Computes the precision, a metric for multi-label classification of
-        how many selected items are relevant.
-        """
         true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
         predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
         precision = true_positives / (predicted_positives + K.epsilon())
         return precision
+    y_true, y_pred = check_units(y_true, y_pred)
     precision = precision(y_true, y_pred)
     recall = recall(y_true, y_pred)
     return 2*((precision*recall)/(precision+recall+K.epsilon()))
