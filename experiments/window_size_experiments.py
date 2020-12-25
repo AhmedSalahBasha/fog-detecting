@@ -8,9 +8,8 @@ from plots import plotting
 from tensorflow.keras.backend import clear_session
 import tensorflow as tf
 
-
-#tf.random.set_seed(123)
-#tf.random.set_random_seed(123)
+tf.random.set_seed(123)
+# tf.random.set_random_seed(123)
 np.random.seed(123)
 
 cols = ['window', 'step', 'test_patient', 'train_shape', 'test_shape', 'train_lable_count', 'test_label_count',

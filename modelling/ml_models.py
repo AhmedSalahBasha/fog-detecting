@@ -10,6 +10,10 @@ from dtaidistance import dtw
 
 
 class ML_Parent_Model:
+    """
+    This class is a parent class for the machine learning models.
+    It contains multiple helpful functions for fitting, training and evaluation.
+    """
     def __init__(self, model):
         self.model = model
 

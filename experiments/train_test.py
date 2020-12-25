@@ -6,6 +6,11 @@ import preprocessing.features_selection as fs
 from plots import plotting
 from preprocessing import preprocessing as pre
 from tensorflow.keras.backend import clear_session
+import tensorflow as tf
+
+tf.random.set_seed(123)
+# tf.random.set_random_seed(123)
+np.random.seed(123)
 
 # full_rolled_df = pre.apply_rolling_on_full_dataframe(win_size=400, step_size=40)
 full_rolled_df = pd.read_csv('data/processed_data/full_rolled_dataset_winsize_400.csv')
@@ -22,10 +27,10 @@ cols = ['train_shape', 'test_shape', 'train_lable_count', 'test_label_count',
         'sensor_pos', 'sensor_type', 'features', 'leg', 'model_name', 'duration',
         'f1_score', 'precision', 'recall', 'conf_matrix', 'clf_report', 'loss']
 results_df = pd.DataFrame(columns=cols)
-results_df['train_shape'] = results_df['train_shape'].astype(object)
-results_df['test_shape'] = results_df['test_shape'].astype(object)
-results_df['train_lable_count'] = results_df['train_lable_count'].astype(object)
-results_df['test_label_count'] = results_df['test_label_count'].astype(object)
+#results_df['train_shape'] = results_df['train_shape'].astype(object)
+#results_df['test_shape'] = results_df['test_shape'].astype(object)
+#results_df['train_lable_count'] = results_df['train_lable_count'].astype(object)
+#results_df['test_label_count'] = results_df['test_label_count'].astype(object)
 
 # Parameters
 idx = 0
@@ -68,10 +73,10 @@ for LEG in legs:
 
                     STARTED_AT = datetime.datetime.now()
                     print("# Model " + m + " started #")
-                    results_df.at[idx, 'train_shape'] = X_train.shape
-                    results_df.at[idx, 'test_shape'] = X_test.shape
-                    results_df.at[idx, 'train_lable_count'] = y_train.value_counts().to_dict()
-                    results_df.at[idx, 'test_label_count'] = y_test.value_counts().to_dict()
+                    results_df.at[idx, 'train_shape'] = str(X_train.shape)
+                    results_df.at[idx, 'test_shape'] = str(X_test.shape)
+                    results_df.at[idx, 'train_lable_count'] = str(y_train.value_counts().to_dict())
+                    results_df.at[idx, 'test_label_count'] = str(y_test.value_counts().to_dict())
                     results_df.at[idx, 'sensor_pos'] = SENSOR_POS
                     results_df.at[idx, 'sensor_type'] = SENSOR_TYPE
                     results_df.at[idx, 'features'] = FEATURES_GROUP
@@ -152,7 +157,7 @@ for LEG in legs:
                         print('X_test_3d shape: ', X_test_3d.shape)
                         model = modelling.call_lstm_model(input_dim, NUM_HIDDEN_LAYERS)
                         X_train_scaled, X_test_scaled = model.features_scaling_3d(X_train_3d, X_test_3d)
-                        # y_train_3d, y_test_3d = model.one_hot_labels(y_train_3d, y_test_3d)
+                        y_train_3d, y_test_3d = model.one_hot_labels(y_train_3d, y_test_3d)
                         model.fit(X_train_scaled, y_train_3d, X_test_scaled, y_test_3d, epochs=EPOCHS,
                                   batch_size=BATCH_SIZE, verbose=0)
                         results = model.evaluate(X_test_scaled, y_test_3d, batch_size=BATCH_SIZE)

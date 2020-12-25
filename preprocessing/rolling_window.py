@@ -26,17 +26,17 @@ def rolling_window(df, win_size, step_size):
             pass
         else:
             # =============== STATISTICAL FEATURES ================
-            '''
+
             input_df[col + '_avg'] = input_df[col].rolling(win_size).mean()[step_size - 1::step_size]     # mean
             input_df[col + '_med'] = input_df[col].rolling(win_size).median()[step_size - 1::step_size]   # median
             input_df[col + '_std'] = input_df[col].rolling(win_size).std()[step_size - 1::step_size]      # standard-deviation
             input_df[col + '_min'] = input_df[col].rolling(win_size).min()[step_size - 1::step_size]      # minimum
             input_df[col + '_max'] = input_df[col].rolling(win_size).max()[step_size - 1::step_size]      # maximum
             input_df[col + '_rms'] = input_df[col].rolling(win_size).apply(tsfel.rms)[step_size - 1::step_size]  # root mean squar
-            input_df[col + '_iqr'] = input_df[col].rolling(win_size).apply(_get_iqr)[step_size - 1::step_size]     # interquartile
-            input_df[col + '_iqr_rng'] = input_df[col].rolling(win_size).apply(tsfel.interq_range)[step_size - 1::step_size]  # interquartile range
+            # input_df[col + '_iqr'] = input_df[col].rolling(win_size).apply(_get_iqr)[step_size - 1::step_size]     # interquartile
+            # input_df[col + '_iqr_rng'] = input_df[col].rolling(win_size).apply(tsfel.interq_range)[step_size - 1::step_size]  # interquartile range
             input_df[col + '_var'] = input_df[col].rolling(win_size).apply(tsfel.calc_var)[step_size - 1::step_size]  # variance
-            '''
+
             # =============== FREQUENCY (SPECTRAL) DOMAIN FEATURES ===================
             input_df[col + '_fi'] = input_df[col].rolling(win_size).apply(_freeze_index,
                                                                           args=(fs, [3, 8], [0.5, 3], win_sec,))[step_size - 1::step_size]    # Freezing Index

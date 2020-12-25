@@ -198,7 +198,7 @@ def plot_time_series(input_df, columns_list, title, pic_name):
                                       figsize=(15, 15),
                                       subplots=True,
                                       title=title)
-    plt.savefig('plots/eda/' + pic_name + '.png')
+    plt.savefig('../eda/eda_plots/' + pic_name + '.png')
     plt.show()
 
 

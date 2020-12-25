@@ -13,6 +13,10 @@ from tensorflow.keras.callbacks import EarlyStopping
 
 
 class DL_Parent_Model:
+    """
+    This class is a parent class for the deep learning models.
+    It contains multiple helpful functions for fitting, training and evaluation.
+    """
     def __init__(self, model=None):
         self.model = model
 
@@ -55,6 +59,11 @@ class DL_Parent_Model:
 
 
 class ANN_Model(DL_Parent_Model):
+    """
+    This is a specific class for the ANN model.
+    It inherits the common functions from the DL_Parent_Model class
+    #Note: This model hasn't been used in this research
+    """
     def __init__(self, input_dim, num_hidden_layers, hidden_layer_actv, output_layer_actv, optimizer, dropout_rate, metric):
         self.model_name = 'ANN'
         self.input_dim = input_dim
@@ -90,6 +99,10 @@ class ANN_Model(DL_Parent_Model):
 
 
 class LSTM_Model(DL_Parent_Model):
+    """
+    This is a specific class for the LSTM model.
+    It inherits the common functions from the DL_Parent_Model class
+    """
     def __init__(self, input_dim, num_hidden_layers, hidden_layer_actv, output_layer_actv, optimizer, dropout_rate, metric):
         self.model_name = 'LSTM'
         self.input_dim = input_dim
@@ -114,7 +127,7 @@ class LSTM_Model(DL_Parent_Model):
         clf.add(Dropout(rate=self.dropout_rate))
         clf.add(Dense(units=units, activation=self.hidden_layer_actv, kernel_initializer='uniform'))
         clf.add(Dropout(rate=self.dropout_rate))
-        clf.add(Dense(units=1, activation=self.output_layer_actv, kernel_initializer='uniform'))
+        clf.add(Dense(units=2, activation=self.output_layer_actv))
         clf.compile(loss='binary_crossentropy', optimizer=self.optimizer, metrics=[self.metric])
         return clf
 
@@ -128,7 +141,7 @@ class LSTM_Model(DL_Parent_Model):
         return scaled_X_train, scaled_X_test
 
     def roc_auc(self, y_test):
-        fpr, tpr, thresholds = metrics.roc_curve(y_test.argmax(axis=1), self.y_pred.argmax(axis=1).ravel())
+        fpr, tpr, thresholds = metrics.roc_curve(y_test, self.y_pred.ravel())
         auc = metrics.auc(fpr, tpr)
         return fpr, tpr, auc
 
